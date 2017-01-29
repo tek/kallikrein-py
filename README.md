@@ -53,6 +53,7 @@ raises an exception.
 klk mod.path.to.ASpec
 ```
 The output looks like this:
+
 ![outputt](img/output.jpg)
 
 ## Extend
