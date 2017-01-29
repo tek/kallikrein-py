@@ -15,7 +15,7 @@ that specify which of the class' methods are specs:
 
 ```python
 from kallikrein import k
-from kallikrein.matchers import contain, greater_equal
+from kallikrein.matchers import contain, greater_equal, forall
 from amino import List
 
 class ASpec:
@@ -54,7 +54,7 @@ klk mod.path.to.ASpec
 ```
 The output looks like this:
 
-![outputt](img/output.jpg)
+![output](img/output.jpg)
 
 ## Extend
 `must` expects a subclass of `Matcher` for its argument which can be
