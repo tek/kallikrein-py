@@ -1,7 +1,7 @@
 from amino.test import Spec
 from amino import List, Right, Left, Path, Just
 
-from kallikrein.run.main import runners, specs_run_task, lookup_file_loc
+from kallikrein.run.main import runners, specs_run_task, lookup_loc
 from kallikrein.run.line import SpecLine
 
 from unit._fixtures.run.simple import Simple, target_report
@@ -20,7 +20,7 @@ class RunSpec(Spec):
         return spec
 
     def file_loc(self) -> None:
-        result = lookup_file_loc(self.spec_file)
+        result = lookup_loc(self.spec_file)
         assert isinstance(result, Right)
         loc = result.value
         assert loc.mod == 'unit._fixtures.run.simple'
