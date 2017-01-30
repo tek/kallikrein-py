@@ -30,7 +30,7 @@ def lookup_by_file(loc: str) -> Either[str, List[SpecLocation]]:
             cls_regex.match //
             __.group('name')
         )
-        .traverse(L(SpecLocation.create)(mod, _, Empty()), Either)
+        .traverse(L(SpecLocation.create)(mod, _, Empty(), True), Either)
         if path.is_file() else
         Left('invalid path: {}'.format(loc))
     )

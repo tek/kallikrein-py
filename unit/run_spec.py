@@ -77,8 +77,11 @@ class RunSpec(Spec):
     def run_path(self) -> None:
         self._run(List(self.spec_path))
 
-    def run_file(self) -> None:
+    def run_file_lnum(self) -> None:
         self._run(List(self.spec_file_lnum))
+
+    def run_file(self) -> None:
+        self._run(List(self.file_path))
 
     def no_docstring(self) -> None:
         result = specs_run_task(List('unit.run_spec.EmptySpec'))

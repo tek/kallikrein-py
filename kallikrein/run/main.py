@@ -87,8 +87,9 @@ def parse_line(spec: Any, line: str) -> Line:
 
 
 def construct_runner(loc: SpecLocation) -> Either[str, SpecRunner]:
+    doc = loc.doc.o(Right('')) if loc.allow_empty else loc.doc
     return (
-        loc.doc /
+        doc /
         List.lines //
         __.traverse(parse_line(loc), Either) /
         L(SpecRunner)(loc, _)

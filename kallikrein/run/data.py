@@ -1,4 +1,4 @@
-from amino import Maybe, Either, L, _, Right, Empty, List
+from amino import Maybe, Either, L, _, Right, Empty, List, Boolean
 from amino.list import Lists
 from amino.logging import Logging
 
@@ -8,9 +8,12 @@ from kallikrein.match_result import MatchResult
 class SpecLocation:
 
     @staticmethod
-    def create(mod: str, cls: str, meth: Maybe[str]
+    def create(mod: str, cls: str, meth: Maybe[str], allow_empty: bool=False
                ) -> Either[str, 'SpecLocation']:
-        return Either.import_name(mod, cls) / L(SpecLocation)(mod, _, meth)
+        return (
+            Either.import_name(mod, cls) /
+            L(SpecLocation)(mod, _, meth, allow_empty)
+        )
 
     @staticmethod
     def from_path(path: str) -> Either[str, 'SpecLocation']:
@@ -26,10 +29,12 @@ class SpecLocation:
             .map3(SpecLocation)
         )
 
-    def __init__(self, mod: str, cls: type, meth: Maybe[str]) -> None:
+    def __init__(self, mod: str, cls: type, meth: Maybe[str], allow_empty:
+                 bool=False) -> None:
         self.mod = mod
         self.cls = cls
         self.meth = meth
+        self.allow_empty = Boolean(allow_empty)
 
     def __str__(self) -> str:
         return '{}({}, {}, {})'.format(self.__class__.__name__, self.mod,
