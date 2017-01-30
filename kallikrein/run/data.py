@@ -1,7 +1,6 @@
 from amino import Maybe, Either, L, _, Right, Empty, List
 from amino.list import Lists
-
-from ribosome.logging import Logging
+from amino.logging import Logging
 
 from kallikrein.match_result import MatchResult
 

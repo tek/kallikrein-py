@@ -1,7 +1,7 @@
 from amino.regex import Regex, Match
 from amino import Path, Either, List, _, Just, Empty, L, Left, __
 
-from ribosome.request.base import parse_int
+from amino.util.numeric import parse_int
 
 from kallikrein.run.data import SpecLocation
 
