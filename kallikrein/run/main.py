@@ -55,12 +55,12 @@ class SpecRunner:
                                    self.lines)
 
 
-def parse_locator(loc: str) -> Either[str, SpecLocation]:
-    return lookup_loc(loc).o(SpecLocation.from_path(loc))
+def parse_locator(loc: str) -> Either[str, List[SpecLocation]]:
+    return lookup_loc(loc)
 
 
 def collect_specs(specs: List[str]) -> Either[str, List[SpecLocation]]:
-    return specs.traverse(parse_locator, Either)
+    return specs.traverse(parse_locator, Either) / _.join
 
 
 def spec_line(spec: SpecLocation, attr: str, line: str) -> Maybe[SpecLine]:
@@ -95,7 +95,8 @@ def construct_runner(loc: SpecLocation) -> Either[str, SpecRunner]:
     )
 
 
-def construct_runners(specs: List[Any]) -> Either[str, List[SpecRunner]]:
+def construct_runners(specs: List[SpecLocation]
+                      ) -> Either[str, List[SpecRunner]]:
     return specs.traverse(construct_runner, Either)
 
 

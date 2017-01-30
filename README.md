@@ -56,6 +56,14 @@ The output looks like this:
 
 ![output](img/output.jpg)
 
+Selection of specs works as well by specifying a file name.
+Optionally, a line number or method name can be appended to run a single case:
+
+```
+klk mod/path/to.py:18
+klk mod.path.to.ASpec.simple
+```
+
 ## Extend
 `must` expects a subclass of `Matcher` for its argument which can be
 customized easily. The matcher should calculate a `MatchResult` containing
