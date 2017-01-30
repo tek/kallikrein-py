@@ -25,15 +25,25 @@ class Line(abc.ABC):
     def __str__(self) -> str:
         return '{}({!r})'.format(self.__class__.__name__, self.text)
 
+    @abc.abstractmethod
+    def exclude_by_name(self, name: str) -> bool:
+        ...
 
-class PlainLine(Line):
+
+class SimpleLine(Line):
+
+    def exclude_by_name(self, name: str) -> bool:
+        return False
+
+
+class PlainLine(SimpleLine):
 
     @property
     def output_lines(self) -> List[str]:
         return List(self.text)
 
 
-class ResultLine(Line):
+class ResultLine(SimpleLine):
 
     def __init__(self, text: str, spec: Any, result: MatchResult) -> None:
         super().__init__(text)
@@ -59,8 +69,10 @@ class ResultLine(Line):
 
 class SpecLine(Line):
 
-    def __init__(self, text: str, spec: Callable[[Any], MatchResult]) -> None:
+    def __init__(self, name: str, text: str, spec: Callable[[Any], MatchResult]
+                 ) -> None:
         super().__init__(text)
+        self.name = name
         self.spec = spec
 
     @property
@@ -79,5 +91,8 @@ class SpecLine(Line):
     def __str__(self) -> str:
         return '{}({}, {})'.format(self.__class__.__name__, self.text,
                                    self.spec_name)
+
+    def exclude_by_name(self, name: str) -> bool:
+        return self.name == name
 
 __all__ = ('Line', 'PlainLine', 'SpecLine', 'ResultLine')
