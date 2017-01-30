@@ -23,8 +23,16 @@ class RunSpec(Spec):
         return 34
 
     @property
+    def lnum_class(self) -> int:
+        return 19
+
+    @property
     def spec_file_lnum(self) -> List[str]:
         return '{}:{}'.format(self.file_path, self.lnum)
+
+    @property
+    def spec_file_lnum_class(self) -> List[str]:
+        return '{}:{}'.format(self.file_path, self.lnum_class)
 
     def file_lnum_loc(self) -> None:
         result = lookup_loc(self.spec_file_lnum)
@@ -35,6 +43,16 @@ class RunSpec(Spec):
         assert loc.mod == 'unit._fixtures.run.simple'
         assert loc.cls == Simple
         assert loc.meth == Just('simple')
+
+    def file_lnum_loc_class(self) -> None:
+        result = lookup_loc(self.spec_file_lnum_class)
+        assert isinstance(result, Right)
+        locs = result.value
+        assert len(locs) == 1
+        loc = locs[0]
+        assert loc.mod == 'unit._fixtures.run.simple'
+        assert loc.cls == Simple
+        assert loc.meth == Empty()
 
     def file_loc(self) -> None:
         result = lookup_loc(self.file_path)
@@ -77,8 +95,11 @@ class RunSpec(Spec):
     def run_path(self) -> None:
         self._run(List(self.spec_path))
 
-    def run_file_lnum(self) -> None:
+    def run_file_lnum_method(self) -> None:
         self._run(List(self.spec_file_lnum))
+
+    def run_file_lnum_class(self) -> None:
+        self._run(List(self.spec_file_lnum_class))
 
     def run_file(self) -> None:
         self._run(List(self.file_path))

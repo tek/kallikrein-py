@@ -47,7 +47,7 @@ def lookup_by_line(path: Path, mod: str, lnum: int
         return (
             name // found_def
             if match.group('kw').contains('def') else
-            name / L(SpecLocation.create)(mod, _, Empty())
+            name // L(SpecLocation.create)(mod, _, Empty())
         )
     loc = content.find_map(cls_def_regex.match)
     return loc // found_cls_def
@@ -75,4 +75,4 @@ def lookup_loc(loc: str) -> Either[str, List[SpecLocation]]:
         .o(SpecLocation.from_path(loc) / List)
     )
 
-__all__ = ('lookup_loc', 'lookup_by_path', 'lookup_by_line')
+__all__ = ('lookup_loc', 'lookup_by_path', 'lookup_by_line', 'lookup_by_file')
