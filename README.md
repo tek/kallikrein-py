@@ -28,16 +28,16 @@ class ASpec:
     successful nesting $nested
     failed spec $failure '''
 
-    def setup(self) -> None:
+    def setup(self):
         self.a = 3
 
-    def simple(self) -> MatchResult:
+    def simple(self):
         return k(3).must(greater_equal(self.a))
 
-    def nested(self) -> MatchResult:
+    def nested(self):
         return k(List(1, 2, 3)).must(contain(greater_equal(self.a)))
 
-    def failure(self) -> MatchResult:
+    def failure(self):
         return k(List('abc', 'abc', 'ac')).must(forall(contain('b')))
 ```
 
@@ -50,7 +50,7 @@ raises an exception.
 
 ## Run
 ```
-klk mod.path.to.ASpec
+% klk mod.path.to.ASpec
 ```
 The output looks like this:
 
@@ -60,8 +60,8 @@ Selection of specs works as well by specifying a file name.
 Optionally, a line number or method name can be appended to run a single case:
 
 ```
-klk mod/path/to.py:18
-klk mod.path.to.ASpec.simple
+% klk mod/path/to.py:18
+% klk mod.path.to.ASpec.simple
 ```
 
 ## Extend
