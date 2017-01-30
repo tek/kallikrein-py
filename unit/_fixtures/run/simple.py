@@ -5,7 +5,7 @@ from kallikrein.matchers import greater_equal, contain, forall
 from kallikrein import k
 
 
-class Empty:
+class EmptySpec:
     pass
 
 l1 = 'example specifications'
@@ -55,4 +55,4 @@ target_report_template = '''{}
 target_report = target_report_template.format(l1, l2, checkmark, l3, l4,
                                               checkmark, l5, l6)
 
-__all__ = ('Empty', 'Simple')
+__all__ = ('EmptySpec', 'Simple')

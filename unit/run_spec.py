@@ -50,7 +50,7 @@ class RunSpec(Spec):
         self._run(List(self.spec_file))
 
     def no_docstring(self) -> None:
-        result = specs_run_task(List('unit.run_spec.Empty'))
+        result = specs_run_task(List('unit.run_spec.EmptySpec'))
         assert isinstance(result.attempt, Left)
 
 

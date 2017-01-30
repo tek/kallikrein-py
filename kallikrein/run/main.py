@@ -1,7 +1,7 @@
 from typing import Any
 
 from amino import (List, Either, Task, Right, curried, L, _, Maybe, __, Left,
-                   Path, Just)
+                   Path, Just, Empty)
 from amino.regex import Regex, Match
 from amino.logging import Logging, amino_root_logger
 from amino.task import TaskException
@@ -10,8 +10,6 @@ from amino.list import Lists
 
 from kallikrein.run.line import Line, SpecLine, PlainLine, ResultLine
 from kallikrein.match_result import MatchResult
-
-from unit._fixtures.run.simple import Empty
 
 
 class SpecLocation:
