@@ -41,15 +41,15 @@ class MatchResult(Generic[A], abc.ABC):
         return '{}({})'.format(self.__class__.__name__, self.report)
 
 
-class SimpleMatchResult(Generic[A, B], MatchResult[A]):
+class SimpleMatchResult(Generic[A], MatchResult[A]):
 
     def __init__(
             self,
-            result: Boolean,
+            result: bool,
             success: str,
             failure: str,
     ) -> None:
-        self.result = result
+        self.result = Boolean(result)
         self.success_msg = success
         self.failure_msg = failure
 
@@ -64,6 +64,27 @@ class SimpleMatchResult(Generic[A, B], MatchResult[A]):
     @property
     def failure_message(self) -> List[str]:
         return List(self.failure_msg)
+
+
+class MultiLineMatchResult(Generic[A], MatchResult[A]):
+
+    def __init__(self, result: bool, success_msg: List[str],
+                 failure_msg: List[str]) -> None:
+        self.result = Boolean(result)
+        self.success_msg = success_msg
+        self.failure_msg = failure_msg
+
+    @property
+    def success(self) -> Boolean:
+        return self.result
+
+    @property
+    def success_message(self) -> List[str]:
+        return self.success_msg
+
+    @property
+    def failure_message(self) -> List[str]:
+        return self.failure_msg
 
 
 class ComplexMatchResult(Generic[A, B], MatchResult[A], abc.ABC):

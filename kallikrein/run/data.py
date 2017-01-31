@@ -41,7 +41,7 @@ class SpecLocation:
                                        self.cls, self.meth)
 
     @property
-    def doc(self) -> str:
+    def doc(self) -> Either[str, str]:
         return (
             Maybe(self.cls.__doc__)
             .to_either('spec class `{}` has no docstring'

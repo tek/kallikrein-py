@@ -1,45 +1,12 @@
 import abc
 import operator
-from typing import Generic, TypeVar, List, Tuple, Callable, Union
+from typing import Tuple, Callable, Union
 from numbers import Number
 
 from kallikrein.match_result import (MatchResult, SimpleMatchResult,
-                                     BadNestedMatch, ExistsMatchResult,
-                                     ForAllMatchResult)
+                                     BadNestedMatch)
 from kallikrein.matcher import Matcher, matcher, MatcherCtor
 from amino import Boolean, L, _
-
-A = TypeVar('A')
-
-
-class Contain(Generic[A], Matcher[List[A]]):
-
-    def match(self, exp: List[A]) -> MatchResult[List[A]]:
-        success = '`{}` contains `{}`'.format(exp, self.target)
-        failure = '`{}` does not contain `{}`'.format(exp, self.target)
-        return SimpleMatchResult(Boolean(self.target in exp), success, failure)
-
-    def match_nested(self, exp: List[A]) -> MatchResult[List[A]]:
-        nested = exp / self.target
-        return ExistsMatchResult(str(self), exp, nested)
-
-
-contain = matcher(Contain)
-
-
-class ForAll(Generic[A], Matcher[List[A]]):
-
-    def match(self, exp: List[A]) -> MatchResult[List[A]]:
-        success = 'all elements of {} are == {}'.format(exp, self.target)
-        failure = 'some elements of {} are /= {}'.format(exp, self.target)
-        return SimpleMatchResult(self.target in exp, success, failure)
-
-    def match_nested(self, exp: List[A]) -> MatchResult[List[A]]:
-        nested = exp / self.target
-        return ForAllMatchResult(str(self), exp, nested)
-
-
-forall = matcher(ForAll)
 
 
 class Comparison(Matcher[Number]):
@@ -66,7 +33,7 @@ class Comparison(Matcher[Number]):
 class SimpleComparison(Comparison):
 
     def __init__(self, op: Callable[[Number, Number], bool], op_s: str,
-                 op_f: str, target: Union[A, 'Matcher[A]']) -> None:
+                 op_f: str, target: Union[Number, 'Matcher[Number]']) -> None:
         super().__init__(target)
         self.op = op
         self.op_s = op_s
@@ -88,5 +55,4 @@ def comparison(op: Callable[[Number, Number], bool], op_s: str, op_f: str
 equal = eq = comparison(operator.eq, '==', '/=')
 greater_equal = ge = comparison(operator.ge, '>=', '<')
 
-__all__ = ('Contain', 'contain', 'greater_equal', 'equal', 'ge', 'eq',
-           'forall')
+__all__ = ('equal', 'greater_equal')

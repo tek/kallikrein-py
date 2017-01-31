@@ -34,6 +34,9 @@ class MatcherSpec(Spec):
             checker(List(1, 2, 7))
         except ExpectationFailed:
             pass
+        except Exception as e:
+            msg = 'unsafe matcher failure raised wrong exception {}'
+            assert False, msg.format(e)
         else:
             assert False, 'unsafe matcher failure didn\'t raise'
         checker(List(5, 6, 7))
