@@ -5,8 +5,8 @@ from hues import huestr
 
 from amino import List
 
-from kallikrein.match_result import MatchResult
 from kallikrein.util.string import indent
+from kallikrein.expectation import ExpectationResult
 
 
 class Line(abc.ABC):
@@ -45,7 +45,8 @@ class PlainLine(SimpleLine):
 
 class ResultLine(SimpleLine):
 
-    def __init__(self, text: str, spec: Any, result: MatchResult) -> None:
+    def __init__(self, text: str, spec: Any, result: ExpectationResult
+                 ) -> None:
         super().__init__(text)
         self.spec = spec
         self.result = result
@@ -64,13 +65,13 @@ class ResultLine(SimpleLine):
         return indent(indent(rest).cons('{} {}'.format(self.sign, self.text)))
 
     def __str__(self) -> str:
-        return '{}({})'.format(self.__class__.__name__, self.output)
+        return '{}({})'.format(self.__class__.__name__, self.output_lines)
 
 
 class SpecLine(Line):
 
-    def __init__(self, name: str, text: str, spec: Callable[[Any], MatchResult]
-                 ) -> None:
+    def __init__(self, name: str, text: str,
+                 spec: Callable[[Any], ExpectationResult]) -> None:
         super().__init__(text)
         self.name = name
         self.spec = spec

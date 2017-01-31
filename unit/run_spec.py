@@ -1,8 +1,9 @@
 from amino.test import Spec
-from amino import List, Right, Left, Path, Just, Empty
+from amino import List, Right, Left, Path, Just, Empty, __, _
 
 from kallikrein.run.main import runners, specs_run_task, lookup_loc
 from kallikrein.run.line import SpecLine
+from kallikrein.expectation import MultiExpectationResult
 
 from unit._fixtures.run.simple import Simple, target_report, EmptySpec
 
@@ -13,10 +14,13 @@ class RunSpec(Spec):
     def spec_path(self) -> str:
         return 'unit.run_spec.Simple'
 
-    @property
-    def file_path(self) -> str:
+    def _file_path(self, name: str) -> str:
         base = Path(__file__).parent
-        return '{}/_fixtures/run/simple.py'.format(base)
+        return '{}/_fixtures/run/{}.py'.format(base, name)
+
+    @property
+    def simple_path(self) -> str:
+        return self._file_path('simple')
 
     @property
     def lnum(self) -> int:
@@ -28,11 +32,11 @@ class RunSpec(Spec):
 
     @property
     def spec_file_lnum(self) -> List[str]:
-        return '{}:{}'.format(self.file_path, self.lnum)
+        return '{}:{}'.format(self.simple_path, self.lnum)
 
     @property
     def spec_file_lnum_class(self) -> List[str]:
-        return '{}:{}'.format(self.file_path, self.lnum_class)
+        return '{}:{}'.format(self.simple_path, self.lnum_class)
 
     def file_lnum_loc(self) -> None:
         result = lookup_loc(self.spec_file_lnum)
@@ -55,7 +59,7 @@ class RunSpec(Spec):
         assert loc.meth == Empty()
 
     def file_loc(self) -> None:
-        result = lookup_loc(self.file_path)
+        result = lookup_loc(self.simple_path)
         assert isinstance(result, Right)
         locs = result.value
         assert len(locs) == 2
@@ -102,7 +106,16 @@ class RunSpec(Spec):
         self._run(List(self.spec_file_lnum_class))
 
     def run_file(self) -> None:
-        self._run(List(self.file_path))
+        self._run(List(self.simple_path))
+
+    def run_multi(self) -> None:
+        task = specs_run_task(List(self._file_path('multi')))
+        result = task.attempt
+        assert isinstance(result, Right)
+        exp_m = result.value.specs.head // __.results.lift(1) / _.result
+        assert exp_m.present
+        exp = exp_m.x
+        assert isinstance(exp, MultiExpectationResult)
 
     def no_docstring(self) -> None:
         result = specs_run_task(List('unit.run_spec.EmptySpec'))

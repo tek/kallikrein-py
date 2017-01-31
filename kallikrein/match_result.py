@@ -152,4 +152,19 @@ class BadNestedMatch(MatchResult[Any]):
     failure_message = message
 
 
+class SuccessMatchResult(MatchResult):
+
+    @property
+    def success(self) -> Boolean:
+        return Boolean(True)
+
+    @property
+    def success_message(self) -> List[str]:
+        return List('success')
+
+    @property
+    def failure_message(self) -> List[str]:
+        return List('success')
+
+
 __all__ = ('MatchResult', 'SimpleMatchResult')

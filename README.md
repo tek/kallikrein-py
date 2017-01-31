@@ -48,6 +48,12 @@ The expectations aren't evaluated in-place, but after having been returned to
 the spec runner. There is an alternative, impure version called `unsafe_k` that
 raises an exception.
 
+Logical operations on expectations are possible:
+```python
+k(3).must(equal(3)) & k(4).must(greater_equal(2)) | k(List(2)).must(contain(2))
+```
+associativity via parentheses is not yet implemented.
+
 ## Run
 ```
 % klk mod.path.to.ASpec

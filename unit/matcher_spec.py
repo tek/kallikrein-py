@@ -5,6 +5,7 @@ from kallikrein.matchers import greater_equal, forall
 from kallikrein import k
 from kallikrein.expectable import ExpectationFailed, unsafe_k
 from kallikrein.matcher import Matcher
+from kallikrein.expectation import UnsafeExpectation
 
 
 class MatcherSpec(Spec):
@@ -23,10 +24,12 @@ class MatcherSpec(Spec):
 
     def functional(self) -> None:
         checker = L(k)(_).match(self._matcher)
-        failure = checker(self._fail)
-        success = checker(self._success)
-        assert not failure.success
-        assert success.success
+        failure = checker(self._fail).evaluate.attempt
+        success = checker(self._success).evaluate.attempt
+        assert failure.present
+        assert not failure.value.success
+        assert success.present
+        assert success.value.success
 
     def unsafe(self) -> None:
         checker = L(unsafe_k)(_).match(self._matcher)
@@ -39,6 +42,13 @@ class MatcherSpec(Spec):
             assert False, msg.format(e)
         else:
             assert False, 'unsafe matcher failure didn\'t raise'
-        checker(List(5, 6, 7))
+        try:
+            exp = checker(List(5, 6, 7))
+            assert isinstance(exp, UnsafeExpectation)
+            result = exp.evaluate.attempt
+            assert result.present
+            assert result.value.success
+        except ExpectationFailed as e:
+            assert False, 'usafe matcher raised for success case: {}'.format(e)
 
 __all__ = ('MatcherSpec',)

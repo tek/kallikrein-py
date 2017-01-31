@@ -10,6 +10,7 @@ from amino.task import TaskException
 from kallikrein.run.line import Line, SpecLine, PlainLine, ResultLine
 from kallikrein.run.data import SpecLocation, SpecResult, SpecsResult
 from kallikrein.run.lookup_loc import lookup_loc
+from kallikrein.expectation import Expectation
 
 
 class SpecRunner:
@@ -32,7 +33,7 @@ class SpecRunner:
         return self.location.cls
 
     @property
-    def run(self) -> Task[Line]:
+    def run(self) -> Task[List[Line]]:
         def run(line: Line) -> Task[Line]:
             return (
                 Task.now(line)
@@ -44,10 +45,18 @@ class SpecRunner:
         return self.lines.traverse(run, Task)
 
     def run_spec(self, line: SpecLine) -> Task[ResultLine]:
-        def run(inst: Any) -> Task[ResultLine]:
-            inst.setup()
+        def evaluate(result: Any) -> Task[ResultLine]:
+            err = 'spec "{}" did not return an Expectation, but `{}`'
             return (
-                Task.delay(line.spec, inst) /
+                result.evaluate
+                if isinstance(result, Expectation) else
+                Task.failed(err.format(line.text, result)))
+        def run(inst: Any) -> Task[ResultLine]:
+            if hasattr(inst, 'setup'):
+                inst.setup()
+            return (
+                Task.delay(line.spec, inst) //
+                evaluate /
                 L(ResultLine)(line.text, inst, _)
             )
         return Task.delay(self.spec_cls) // run

@@ -2,7 +2,7 @@ from amino import Maybe, Either, L, _, Right, Empty, List, Boolean
 from amino.list import Lists
 from amino.logging import Logging
 
-from kallikrein.match_result import MatchResult
+from kallikrein.expectation import ExpectationResult
 
 
 class SpecLocation:
@@ -51,7 +51,7 @@ class SpecLocation:
 
 class SpecResult(Logging):
 
-    def __init__(self, results: List[MatchResult]) -> None:
+    def __init__(self, results: List[ExpectationResult]) -> None:
         self.results = results
 
     @property

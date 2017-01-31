@@ -1,8 +1,11 @@
 import abc
 from typing import Generic, TypeVar
 
+from amino import _
+
 from kallikrein.match_result import MatchResult
 from kallikrein.matcher import Matcher
+from kallikrein.expectation import UnsafeExpectation, SingleExpectation
 
 A = TypeVar('A')
 
@@ -25,17 +28,18 @@ class ExpectableBase(Generic[A], abc.ABC):
 
     must = __call__
 
-    def safe_match(self, matcher: Matcher[A]) -> MatchResult[A]:
+    def safe_match(self, matcher: Matcher[A]) -> SingleExpectation:
         return self.default_expectation(matcher)
 
-    def unsafe_match(self, matcher: Matcher[A]) -> MatchResult[A]:
-        match = self.safe_match(matcher)
-        if not match.success:
-            raise ExpectationFailed(match.report)
-        return match
+    def unsafe_match(self, matcher: Matcher[A]) -> UnsafeExpectation:
+        match = self.safe_match(matcher).evaluate.attempt
+        if not match.exists(_.success):
+            raise ExpectationFailed(match.map(_.report) | '')
+        else:
+            return UnsafeExpectation(match, self.value)
 
     def default_expectation(self, matcher: Matcher[A]) -> MatchResult[A]:
-        return matcher(self.value)
+        return SingleExpectation(matcher, self.value)
 
 
 class Expectable(ExpectableBase):
