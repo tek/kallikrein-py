@@ -95,7 +95,7 @@ contain = matcher(Contain)
 strings that describe the success and failure.
 
 `ExistsMatchResult` is a little more complex; it receives the list of nested
-matche results (one for each list element) and creates a detailed error
+match results (one for each list element) and creates a detailed error
 message.
 
 The `target` attribute of `Matcher` contains either a nested `Matcher` or a
