@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version_parts = (0, 5, 0)
+version_parts = (0, 5, 1)
 version = '.'.join(map(str, version_parts))
 
 setup(
@@ -13,7 +13,7 @@ setup(
     url='https://github.com/tek/kallikrein',
     packages=find_packages(exclude=['unit', 'unit.*']),
     install_requires=[
-        'amino',
+        'amino>=9.1.0',
         'golgi',
         'hues',
     ],
