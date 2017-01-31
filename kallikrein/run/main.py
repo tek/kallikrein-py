@@ -1,5 +1,7 @@
 from typing import Any
 
+from hues import huestr
+
 from amino import (List, Either, Task, Right, curried, L, _, Maybe, __)
 from amino.regex import Regex
 from amino.logging import amino_root_logger
@@ -123,7 +125,8 @@ def specs_run_task(specs: List[str]) -> Task[SpecsResult]:
 def kallikrein_run(specs: List[str]) -> Either[Exception, SpecsResult]:
     def error(e: Any) -> None:
         msg = e.cause if isinstance(e, TaskException) else e
-        amino_root_logger.error(msg)
+        amino_root_logger.error('error in spec run:')
+        amino_root_logger.error(huestr(str(msg)).red.bold.colorized)
     return (specs_run_task(specs) % __.print_report()).attempt.leffect(error)
 
 __all__ = ('kallikrein_run',)
