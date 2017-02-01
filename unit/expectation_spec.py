@@ -8,7 +8,7 @@ from kallikrein.matcher import Matcher
 from kallikrein.expectation import UnsafeExpectation
 
 
-class MatcherSpec(Spec):
+class ExpectationSpec(Spec):
 
     @property
     def _matcher(self) -> Matcher:
@@ -51,4 +51,4 @@ class MatcherSpec(Spec):
         except ExpectationFailed as e:
             assert False, 'usafe matcher raised for success case: {}'.format(e)
 
-__all__ = ('MatcherSpec',)
+__all__ = ('ExpectationSpec',)

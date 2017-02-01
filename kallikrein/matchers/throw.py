@@ -20,22 +20,23 @@ class Throw(Matcher[Callable]):
     def exception(self, exp: Callable) -> Either[Any, Exception]:
         return Try(exp).swap / _.cause
 
-    def match(self, exp: Callable) -> MatchResult[Callable]:
+    def match(self, exp: Callable, target: type) -> MatchResult[Callable]:
         exc = self.exception(exp)
-        result = exc.exists(L(isinstance)(_, self.target))
+        result = exc.exists(L(isinstance)(_, target))
         name = exc / (lambda a: a.__class__.__name__)
         exp_repr = lambda_str(exp)
         exc_repr = name / '`{}`'.format | Throw.no_exception
         success = Throw.simple_success.format(exp_repr, exc_repr)
         failure = Throw.simple_failure.format(
-            exp_repr, exc_repr, self.target.__name__
+            exp_repr, exc_repr, target.__name__
         )
         return SimpleMatchResult(result, success, failure)
 
-    def match_nested(self, exp: Callable) -> MatchResult[Callable]:
+    def match_nested(self, exp: Callable, target: Matcher
+                     ) -> MatchResult[Callable]:
         exp_repr = lambda_str(exp)
         exc = self.exception(exp)
-        nested = exc / self.target
+        nested = exc / target
         result = nested.exists(_.success)
         success_pre = Throw.nested_success.format(exp_repr)
         no_nested = List('no nested message')

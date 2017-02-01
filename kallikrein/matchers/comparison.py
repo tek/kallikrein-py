@@ -19,14 +19,15 @@ class Comparison(Matcher[Number]):
     def operator_reprs(self) -> Tuple[str, str]:
         ...
 
-    def match(self, exp: Number) -> MatchResult[Number]:
+    def match(self, exp: Number, target: Number) -> MatchResult[Number]:
         op_s, op_f = self.operator_reprs
-        success = '{} {} {}'.format(exp, op_s, self.target)
-        failure = '{} {} {}'.format(exp, op_f, self.target)
+        success = '{} {} {}'.format(exp, op_s, target)
+        failure = '{} {} {}'.format(exp, op_f, target)
         result = Boolean(self.operator(exp, self.target))
         return SimpleMatchResult(result, success, failure)
 
-    def match_nested(self) -> MatchResult[Number]:
+    def match_nested(self, exp: Number, target: Matcher
+                     ) -> MatchResult[Number]:
         return BadNestedMatch(self)
 
 
