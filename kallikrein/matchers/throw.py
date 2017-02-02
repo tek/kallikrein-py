@@ -26,34 +26,36 @@ class Throw(Matcher[Callable]):
         name = exc / (lambda a: a.__class__.__name__)
         exp_repr = lambda_str(exp)
         exc_repr = name / '`{}`'.format | Throw.no_exception
-        success = Throw.simple_success.format(exp_repr, exc_repr)
-        failure = Throw.simple_failure.format(
-            exp_repr, exc_repr, target.__name__
+        message = (
+            Throw.simple_success.format(exp_repr, exc_repr)
+            if result else
+            Throw.simple_failure.format(exp_repr, exc_repr, target.__name__)
         )
-        return SimpleMatchResult(result, success, failure)
+        return SimpleMatchResult(result, message)
 
     def match_nested(self, exp: Callable, target: Matcher
                      ) -> MatchResult[Callable]:
         exp_repr = lambda_str(exp)
         exc = self.exception(exp)
-        nested = exc / target
+        nested = exc / target.evaluate
         result = nested.exists(_.success)
         success_pre = Throw.nested_success.format(exp_repr)
         no_nested = List('no nested message')
-        success_nested = nested / _.success_message | no_nested
+        success_nested = nested / _.message | no_nested
         success = indent(success_nested).cons(success_pre)
         failure_pre = (
             Throw.nested_failure
             if exc.present else
             Throw.nested_failure_not_raise
         ).format(exp_repr)
-        failure_nested = nested / _.failure_message | no_nested
+        failure_nested = nested / _.message | no_nested
         failure = (
             indent(failure_nested).cons(failure_pre)
             if exc.present else
             List(failure_pre)
         )
-        return MultiLineMatchResult(result, success, failure)
+        message = success if result else failure
+        return MultiLineMatchResult(result, message)
 
 
 throw = matcher(Throw)

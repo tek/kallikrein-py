@@ -1,4 +1,5 @@
-from typing import Generic, TypeVar, Container
+from typing import Generic, TypeVar
+from typing import Collection  # type: ignore
 
 from kallikrein.match_result import (MatchResult, SimpleMatchResult,
                                      ForAllMatchResult)
@@ -10,16 +11,20 @@ from kallikrein.matcher import Matcher, matcher
 A = TypeVar('A')
 
 
-class ForAll(Generic[A], Matcher[Container[A]]):
+class ForAll(Generic[A], Matcher[Collection[A]]):
+    success = 'all elements of {} are == {}'
+    failure = 'some elements of {} are /= {}'
 
-    def match(self, exp: Container[A], target: A) -> MatchResult[Container[A]]:
-        success = 'all elements of {} are == {}'.format(exp, self.target)
-        failure = 'some elements of {} are /= {}'.format(exp, self.target)
-        return SimpleMatchResult(self.target in exp, success, failure)
+    def match(self, exp: Collection[A], target: A
+              ) -> MatchResult[Collection[A]]:
+        result = self.target in exp
+        templ = ForAll.success if result else ForAll.failure
+        message = templ.format(exp, self.target)
+        return SimpleMatchResult(result, message)
 
-    def match_nested(self, exp: Container[A], target: Matcher
-                     ) -> MatchResult[Container[A]]:
-        nested = List.wrap([target(e) for e in exp])
+    def match_nested(self, exp: Collection[A], target: Matcher
+                     ) -> MatchResult[Collection[A]]:
+        nested = List.wrap([target.evaluate(e) for e in exp])
         return ForAllMatchResult(str(self), exp, nested)
 
 

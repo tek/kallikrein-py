@@ -20,11 +20,11 @@ class Comparison(Matcher[Number]):
         ...
 
     def match(self, exp: Number, target: Number) -> MatchResult[Number]:
-        op_s, op_f = self.operator_reprs
-        success = '{} {} {}'.format(exp, op_s, target)
-        failure = '{} {} {}'.format(exp, op_f, target)
         result = Boolean(self.operator(exp, self.target))
-        return SimpleMatchResult(result, success, failure)
+        op_s, op_f = self.operator_reprs
+        op = op_s if result else op_f
+        message = '{} {} {}'.format(exp, op, target)
+        return SimpleMatchResult(result, message)
 
     def match_nested(self, exp: Number, target: Matcher
                      ) -> MatchResult[Number]:

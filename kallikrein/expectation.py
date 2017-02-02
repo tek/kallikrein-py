@@ -103,7 +103,7 @@ class SingleExpectation(Expectation):
 
     @property
     def evaluate(self) -> Task[ExpectationResult]:
-        return (Task.delay(self.matcher, self.value) /
+        return (Task.delay(self.matcher.evaluate, self.value) /
                 L(SingleExpectationResult)(self, _))
 
     def __str__(self) -> str:

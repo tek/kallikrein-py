@@ -49,8 +49,7 @@ target_report_template = '''{}
 {}
  {} {}
  \x1b[31m✗\x1b[0m {}
-  some elements do not match:
-   \x1b[33m`ac` does not contain `b`\x1b[0m
+  some elements do not match: \x1b[33m`ac` does not contain `b`\x1b[0m
 '''
 target_report = target_report_template.format(l1, l2, checkmark, l3, l4,
                                               checkmark, l5, l6)

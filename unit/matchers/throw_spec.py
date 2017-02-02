@@ -7,6 +7,7 @@ from kallikrein.matchers import throw, contain
 from kallikrein.matchers.throw import Throw
 from kallikrein.matchers.contain import Contain
 from kallikrein.expectation import Expectation
+from kallikrein.match_result import MatchResult
 
 
 class Error1(Exception):
@@ -48,7 +49,7 @@ def _throw3(exc: Exception) -> None:
 
 class ThrowSpec(Spec):
 
-    def _run(self, exp: Expectation, success: bool):
+    def _run(self, exp: Expectation, success: bool) -> MatchResult:
         result = exp.evaluate.attempt
         assert result.present
         assert result.value.success == success

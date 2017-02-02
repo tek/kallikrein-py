@@ -1,5 +1,5 @@
 from kallikrein import k
-from kallikrein.matcher import have_type
+from kallikrein.matchers.typed import have_type
 
 from amino import List, Just
 from amino.test import Spec
