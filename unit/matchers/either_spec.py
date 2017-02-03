@@ -2,7 +2,7 @@ from amino.test import Spec
 from amino import Right, Left, List
 
 from kallikrein import k
-from kallikrein.matchers.either import be_right
+from kallikrein.matchers.either import be_right, be_left
 from kallikrein.match_result import MatchResult
 from kallikrein.expectation import Expectation
 from kallikrein.matchers import contain
@@ -18,8 +18,12 @@ class EitherSpec(Spec):
         assert len(result.report_lines) == 1
         return result
 
-    def success(self) -> None:
+    def success_right(self) -> None:
         result = self._run(k(Right(1)).must(be_right), True)
+        assert 'not' not in result.report
+
+    def success_left(self) -> None:
+        result = self._run(k(Left(1)).must(be_left), True)
         assert 'not' not in result.report
 
     def failure(self) -> None:
