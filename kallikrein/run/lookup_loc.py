@@ -57,7 +57,12 @@ def lookup_by_path(match: Match, path: str) -> Either[str, List[SpecLocation]]:
     p = Path(path)
     mod = resolve_module(p)
     return (
-        (match.group('lnum') // parse_int // L(lookup_by_line)(p, mod, _))
+        (
+            match.group('lnum') //
+            parse_int /
+            (_ - 1) //
+            L(lookup_by_line)(p, mod, _)
+        )
         .o(lambda: match.group('cls') //
             L(SpecLocation.create)(mod, _, match.group('meth')))
         .map(List)

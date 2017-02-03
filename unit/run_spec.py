@@ -31,7 +31,7 @@ class RunSpec(Spec):
 
     @property
     def lnum(self) -> int:
-        return 36
+        return 37
 
     @property
     def lnum_class(self) -> int:
