@@ -3,6 +3,7 @@ from amino import List
 from kallikrein.match_result import MatchResult
 from kallikrein.matchers import greater_equal, contain, forall
 from kallikrein import k
+from kallikrein.util.string import green_check, red_cross, yellow
 
 
 class EmptySpec:
@@ -14,6 +15,7 @@ l3 = 'simple spec'
 l4 = 'these tests are nested'
 l5 = 'successful nesting'
 l6 = 'failed spec'
+err = '`ac` does not contain `b`'
 
 
 class Simple:
@@ -40,7 +42,6 @@ class Simple:
         return k(List('abc', 'abc', 'ac')).must(forall(contain('b')))
 
 
-checkmark = '\x1b[32m✓\x1b[0m'
 target_report_template = '''{}
 
 {}
@@ -48,10 +49,18 @@ target_report_template = '''{}
 
 {}
  {} {}
- \x1b[31m✗\x1b[0m {}
-  some elements do not match: \x1b[33m`ac` does not contain `b`\x1b[0m
+ {} {}
+  some elements do not match: {}
 '''
-target_report = target_report_template.format(l1, l2, checkmark, l3, l4,
-                                              checkmark, l5, l6)
+target_report = target_report_template.format(
+    l1, l2, green_check, l3, l4, green_check, l5, red_cross, l6, yellow(err))
+
+target_report_method = '''{}
+
+{}
+ {} {}
+
+{}
+'''.format(l1, l2, green_check, l3, l4)
 
 __all__ = ('EmptySpec', 'Simple')

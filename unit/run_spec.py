@@ -5,7 +5,8 @@ from kallikrein.run.main import runners, specs_run_task, lookup_loc
 from kallikrein.run.line import SpecLine
 from kallikrein.expectation import MultiExpectationResult
 
-from unit._fixtures.run.simple import Simple, target_report, EmptySpec
+from unit._fixtures.run.simple import (Simple, target_report, EmptySpec,
+                                       target_report_method)
 from unit._fixtures.run.unsafe import target_report_unsafe
 from unit._fixtures.run.exception import target_report_exception
 
@@ -15,6 +16,10 @@ class RunSpec(Spec):
     @property
     def spec_path(self) -> str:
         return 'unit.run_spec.Simple'
+
+    @property
+    def spec_path_method(self) -> str:
+        return '{}.{}'.format(self.spec_path, 'simple')
 
     def _file_path(self, name: str) -> str:
         base = Path(__file__).parent
@@ -26,11 +31,11 @@ class RunSpec(Spec):
 
     @property
     def lnum(self) -> int:
-        return 34
+        return 36
 
     @property
     def lnum_class(self) -> int:
-        return 19
+        return 24
 
     @property
     def spec_file_lnum(self) -> List[str]:
@@ -96,13 +101,24 @@ class RunSpec(Spec):
         task = specs_run_task(specs)
         result = task.attempt
         assert isinstance(result, Right)
-        assert result.value.report == target_report
+        report = result.value.report
+        assert report == target_report
+
+    def _run_method(self, spec: str) -> None:
+        task = specs_run_task(List(spec))
+        result = task.attempt
+        assert isinstance(result, Right)
+        report = result.value.report
+        assert report == target_report_method
 
     def run_path(self) -> None:
         self._run(List(self.spec_path))
 
+    def run_file_path_method(self) -> None:
+        self._run_method(self.spec_path_method)
+
     def run_file_lnum_method(self) -> None:
-        self._run(List(self.spec_file_lnum))
+        self._run_method(self.spec_file_lnum)
 
     def run_file_lnum_class(self) -> None:
         self._run(List(self.spec_file_lnum_class))

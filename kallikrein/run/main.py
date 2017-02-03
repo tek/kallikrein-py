@@ -45,7 +45,7 @@ class SpecRunner:
                 if isinstance(line, SpecLine) else
                 Task.failed('invalid line in spec: {}'.format(line))
             )
-        return self.lines.traverse(run, Task)
+        return self.valid_lines.traverse(run, Task)
 
     @property
     def unsafe(self) -> bool:

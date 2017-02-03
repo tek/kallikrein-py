@@ -88,6 +88,6 @@ class SpecLine(Line):
                                    self.spec_name)
 
     def exclude_by_name(self, name: str) -> bool:
-        return self.name == name
+        return self.name != name
 
 __all__ = ('Line', 'PlainLine', 'SpecLine', 'ResultLine')
