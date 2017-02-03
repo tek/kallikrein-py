@@ -25,6 +25,8 @@ class ExpectableBase(Generic[A], abc.ABC):
 
     must = __call__
 
+    __eq__ = __call__
+
     def safe_match(self, matcher: Matcher[A]) -> SingleExpectation:
         return self.default_expectation(matcher)
 
