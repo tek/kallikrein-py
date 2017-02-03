@@ -1,3 +1,3 @@
-from kallikrein.expectable import k
+from kallikrein.expectable import k, unsafe_k
 
-__all__ = ('k',)
+__all__ = ('k', 'unsafe_k')

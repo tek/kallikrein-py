@@ -6,6 +6,8 @@ from kallikrein.run.line import SpecLine
 from kallikrein.expectation import MultiExpectationResult
 
 from unit._fixtures.run.simple import Simple, target_report, EmptySpec
+from unit._fixtures.run.unsafe import target_report_unsafe
+from unit._fixtures.run.exception import target_report_exception
 
 
 class RunSpec(Spec):
@@ -107,6 +109,20 @@ class RunSpec(Spec):
 
     def run_file(self) -> None:
         self._run(List(self.simple_path))
+
+    def run_unsafe(self) -> None:
+        task = specs_run_task(List(self._file_path('unsafe')))
+        result = task.attempt
+        assert isinstance(result, Right)
+        report = result.value.report
+        assert report == target_report_unsafe
+
+    def run_exception(self) -> None:
+        task = specs_run_task(List(self._file_path('exception')))
+        result = task.attempt
+        assert isinstance(result, Right)
+        report = result.value.report
+        assert report == target_report_exception
 
     def run_multi(self) -> None:
         task = specs_run_task(List(self._file_path('multi')))

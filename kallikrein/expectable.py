@@ -1,17 +1,14 @@
 import abc
 from typing import Generic, TypeVar
 
-from amino import _
+from amino import _, List
 
 from kallikrein.match_result import MatchResult
 from kallikrein.matcher import Matcher
-from kallikrein.expectation import UnsafeExpectation, SingleExpectation
+from kallikrein.expectation import (UnsafeExpectation, SingleExpectation,
+                                    ExpectationFailed)
 
 A = TypeVar('A')
-
-
-class ExpectationFailed(Exception):
-    pass
 
 
 class ExpectableBase(Generic[A], abc.ABC):
@@ -34,7 +31,7 @@ class ExpectableBase(Generic[A], abc.ABC):
     def unsafe_match(self, matcher: Matcher[A]) -> UnsafeExpectation:
         match = self.safe_match(matcher).evaluate.attempt
         if not match.exists(_.success):
-            raise ExpectationFailed(match.map(_.report) | '')
+            raise ExpectationFailed(match.map(_.report_lines) | List())
         else:
             return UnsafeExpectation(match, self.value)
 

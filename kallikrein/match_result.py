@@ -203,4 +203,18 @@ class SuccessMatchResult(MatchResult):
         return List('success')
 
 
-__all__ = ('MatchResult', 'SimpleMatchResult')
+class FailureMatchResult(MatchResult):
+
+    @property
+    def success(self) -> Boolean:
+        return Boolean(False)
+
+    @property
+    def message(self) -> List[str]:
+        return List('failure')
+
+
+__all__ = ('MatchResult', 'SimpleMatchResult', 'MultiLineMatchResult',
+           'NestedMatchResult', 'MultiMatchResult', 'ExistsMatchResult',
+           'ForAllMatchResult', 'BadNestedMatch', 'SuccessMatchResult',
+           'FailureMatchResult')

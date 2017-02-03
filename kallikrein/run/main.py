@@ -1,8 +1,8 @@
-from typing import Any
+from typing import Any, Callable
 
 from hues import huestr
 
-from amino import (List, Either, Task, Right, curried, L, _, Maybe, __)
+from amino import List, Either, Task, Right, curried, L, _, Maybe, __, Try
 from amino.regex import Regex
 from amino.logging import amino_root_logger
 from amino.task import TaskException
@@ -10,7 +10,10 @@ from amino.task import TaskException
 from kallikrein.run.line import Line, SpecLine, PlainLine, ResultLine
 from kallikrein.run.data import SpecLocation, SpecResult, SpecsResult
 from kallikrein.run.lookup_loc import lookup_loc
-from kallikrein.expectation import Expectation
+from kallikrein.expectation import (Expectation, unsafe_expectation_result,
+                                    ExpectationResult, FailedUnsafeSpec,
+                                    FatalSpec)
+from kallikrein.expectable import ExpectationFailed
 
 
 class SpecRunner:
@@ -44,18 +47,34 @@ class SpecRunner:
             )
         return self.lines.traverse(run, Task)
 
+    @property
+    def unsafe(self) -> bool:
+        return hasattr(self.spec_cls, '__unsafe__')
+
     def run_spec(self, line: SpecLine) -> Task[ResultLine]:
-        def evaluate(result: Any) -> Task[ResultLine]:
+        def recover(error: TaskException) -> Expectation:
+            cause = error.cause
+            return (
+                FailedUnsafeSpec(line.name, cause)
+                if isinstance(cause, ExpectationFailed) else
+                FatalSpec(line.name, cause)
+            )
+        def execute(spec: Callable[[Any], Expectation],
+                    inst: Any) -> Task[Expectation]:
+            return Try(spec, inst).right_or_map(recover)
+        def evaluate(expectation: Expectation) -> Task[ExpectationResult]:
             err = 'spec "{}" did not return an Expectation, but `{}`'
             return (
-                result.evaluate
-                if isinstance(result, Expectation) else
-                Task.failed(err.format(line.text, result)))
+                expectation.evaluate
+                if isinstance(expectation, Expectation) else
+                Task.now(unsafe_expectation_result)
+                if self.unsafe else
+                Task.failed(err.format(line.text, expectation)))
         def run(inst: Any) -> Task[ResultLine]:
             if hasattr(inst, 'setup'):
                 inst.setup()
             return (
-                Task.delay(line.spec, inst) //
+                Task.delay(execute, line.spec, inst) //
                 evaluate /
                 L(ResultLine)(line.text, inst, _)
             )

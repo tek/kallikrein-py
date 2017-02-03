@@ -1,12 +1,10 @@
 import abc
 from typing import Any, Callable
 
-from hues import huestr
-
 from amino import List
 
-from kallikrein.util.string import indent
-from kallikrein.expectation import ExpectationResult
+from kallikrein.util.string import indent, red_cross, green_check
+from kallikrein.expectation import ExpectationResult, Expectation
 
 
 class Line(abc.ABC):
@@ -53,11 +51,7 @@ class ResultLine(SimpleLine):
 
     @property
     def sign(self) -> str:
-        return (
-            huestr('✓').green.colorized
-            if self.result.success else
-            huestr('✗').red.colorized
-        )
+        return green_check if self.result.success else red_cross
 
     @property
     def output_lines(self) -> List[str]:
@@ -71,7 +65,7 @@ class ResultLine(SimpleLine):
 class SpecLine(Line):
 
     def __init__(self, name: str, text: str,
-                 spec: Callable[[Any], ExpectationResult]) -> None:
+                 spec: Callable[[Any], Expectation]) -> None:
         super().__init__(text)
         self.name = name
         self.spec = spec

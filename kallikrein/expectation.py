@@ -1,14 +1,25 @@
 import abc
 import operator
+import traceback
 from typing import Generic, TypeVar, Callable
 
-from amino import Boolean, Task, L, _, List
+from hues import huestr
+
+from amino import Boolean, Task, L, _, List, __
+from amino.boolean import false, true
 
 from kallikrein.matcher import Matcher
 from kallikrein.match_result import MatchResult, SuccessMatchResult
+from kallikrein.util.string import indent, red
 
 A = TypeVar('A')
 B = TypeVar('B')
+
+
+class ExpectationFailed(Exception):
+
+    def __init__(self, report: List[str]) -> None:
+        self.report = report
 
 
 class ExpectationResult(abc.ABC):
@@ -73,6 +84,60 @@ class MultiExpectationResult(ExpectationResult):
         return self.left.report_lines + self.right.report_lines
 
 
+class UnsafeExpectationResult(ExpectationResult):
+
+    @property
+    def success(self) -> Boolean:
+        return true
+
+    @property
+    def report_lines(self) -> List[str]:
+        return List('unsafe spec succeeded')
+
+
+unsafe_expectation_result = UnsafeExpectationResult()
+
+
+class FatalSpecResult(ExpectationResult):
+    error_head = 'exception during spec:'
+
+    def __init__(self, name: str, error: Exception) -> None:
+        self.name = name
+        self.error = error
+
+    @property
+    def success(self) -> Boolean:
+        return false
+
+    @property
+    def report_lines(self) -> List[str]:
+        stack = (List.wrap(traceback.extract_tb(self.error.__traceback__))
+                 .drop_while(_.name != self.name))
+        exc = traceback.format_exception_only(type(self.error), self.error)
+        exc_fmt = (
+            List.wrap(exc) /
+            __.rstrip() /
+            red
+        )
+        lines = List.lines(''.join(traceback.format_list(stack))) / __.rstrip()
+        return indent(lines + exc_fmt).cons(FatalSpecResult.error_head)
+
+
+class FailedUnsafeSpecResult(ExpectationResult):
+
+    def __init__(self, name: str, error: ExpectationFailed) -> None:
+        self.name = name
+        self.error = error
+
+    @property
+    def success(self) -> Boolean:
+        return false
+
+    @property
+    def report_lines(self) -> List[str]:
+        return indent(self.error.report).cons('unsafe spec failed:')
+
+
 class InvalidExpectation(Exception):
 
     def __init__(self, exp: 'Expectation') -> None:
@@ -86,16 +151,19 @@ class Expectation(Generic[A], abc.ABC):
     def evaluate(self) -> Task[ExpectationResult]:
         ...
 
+
+class AlgExpectation(Expectation):
+
     @abc.abstractmethod
-    def __and__(self, other: 'Expectation') -> 'MultiExpectation':
+    def __and__(self, other: 'AlgExpectation') -> 'MultiExpectation':
         ...
 
     @abc.abstractmethod
-    def __or__(self, other: 'Expectation') -> 'MultiExpectation':
+    def __or__(self, other: 'AlgExpectation') -> 'MultiExpectation':
         ...
 
 
-class SingleExpectation(Expectation):
+class SingleExpectation(AlgExpectation):
 
     def __init__(self, matcher: Matcher[A], value: A) -> None:
         self.matcher = matcher
@@ -110,16 +178,16 @@ class SingleExpectation(Expectation):
         return '{}({}, {})'.format(self.__class__.__name__, self.matcher,
                                    self.value)
 
-    def __and__(self, other: Expectation) -> 'MultiExpectation':
+    def __and__(self, other: AlgExpectation) -> 'MultiExpectation':
         return MultiExpectation(self, other, operator.and_)
 
-    def __or__(self, other: Expectation) -> 'MultiExpectation':
+    def __or__(self, other: AlgExpectation) -> 'MultiExpectation':
         return MultiExpectation(self, other, operator.or_)
 
 
-class MultiExpectation(Expectation):
+class MultiExpectation(AlgExpectation):
 
-    def __init__(self, left: SingleExpectation, right: Expectation,
+    def __init__(self, left: SingleExpectation, right: AlgExpectation,
                  op: Callable[[bool, bool], bool]) -> None:
         self.left = left
         self.right = right
@@ -136,10 +204,10 @@ class MultiExpectation(Expectation):
         return '{}({}, {})'.format(self.__class__.__name__, self.left,
                                    self.right)
 
-    def __and__(self, other: Expectation) -> 'MultiExpectation':
+    def __and__(self, other: AlgExpectation) -> 'MultiExpectation':
         return MultiExpectation(self.left, self.right & other, self.op)
 
-    def __or__(self, other: Expectation) -> 'MultiExpectation':
+    def __or__(self, other: AlgExpectation) -> 'MultiExpectation':
         return MultiExpectation(self.left, self.right | other, self.op)
 
 
@@ -150,4 +218,26 @@ class UnsafeExpectation(SingleExpectation):
         return Task.now(SingleExpectationResult(self, SuccessMatchResult()))
 
 
-__all__ = ('Expectation', 'SingleExpectation', 'UnsafeExpectation')
+class FatalSpec(Expectation):
+
+    def __init__(self, name: str, error: Exception) -> None:
+        self.name = name
+        self.error = error
+
+    @property
+    def evaluate(self) -> Task[ExpectationResult]:
+        return Task.now(FatalSpecResult(self.name, self.error))
+
+
+class FailedUnsafeSpec(Expectation):
+
+    def __init__(self, name: str, error: ExpectationFailed) -> None:
+        self.name = name
+        self.error = error
+
+    @property
+    def evaluate(self) -> Task[ExpectationResult]:
+        return Task.now(FailedUnsafeSpecResult(self.name, self.error))
+
+__all__ = ('Expectation', 'SingleExpectation', 'UnsafeExpectation',
+           'unsafe_expectation_result', 'FatalSpec', 'FailedUnsafeSpec')
