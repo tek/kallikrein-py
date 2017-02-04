@@ -7,6 +7,7 @@ from kallikrein.match_result import MatchResult
 from kallikrein.matcher import Matcher
 from kallikrein.expectation import (UnsafeExpectation, SingleExpectation,
                                     ExpectationFailed)
+from kallikrein.matchers import equal
 
 A = TypeVar('A')
 
@@ -25,7 +26,8 @@ class ExpectableBase(Generic[A], abc.ABC):
 
     must = __call__
 
-    __eq__ = __call__
+    def __eq__(self, value: A) -> MatchResult[A]:
+        return self.must(equal(value))
 
     def safe_match(self, matcher: Matcher[A]) -> SingleExpectation:
         return self.default_expectation(matcher)
