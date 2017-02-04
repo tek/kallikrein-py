@@ -24,7 +24,8 @@ class EitherMatcher(Matcher[Either]):
 
     def _match_type(self, exp: Either) -> Tuple[bool, str]:
         actual = either_name(self.right_expected)
-        success = exp.is_right == self.right_expected
+        success = (isinstance(exp, Either) and
+                   exp.is_right == self.right_expected)
         no = '' if success else 'not '
         msg = EitherMatcher.type_message.format(exp, no, actual)
         return success, msg
