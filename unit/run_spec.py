@@ -1,94 +1,90 @@
 from amino.test import Spec
-from amino import List, Right, Left, Path, Just, Empty, __, _
+from amino import List, Right, Left, Path, Just, Empty, __, _, Maybe
+from amino.list import Lists
 
 from kallikrein.run.main import runners, specs_run_task, lookup_loc
 from kallikrein.run.line import SpecLine
 from kallikrein.expectation import MultiExpectationResult
+from kallikrein.run.data import SpecLocation
 
 from unit._fixtures.run.simple import (Simple, target_report, EmptySpec,
                                        target_report_method)
 from unit._fixtures.run.unsafe import target_report_unsafe
 from unit._fixtures.run.exception import target_report_exception
 
+spec_mod = Simple.__module__
+meth_name = Simple.simple.__name__
+spec_path_parts = Lists.split(spec_mod, '.')
+spec_cls_name = Simple.__name__
+spec_cls_path = spec_path_parts.cat(spec_cls_name).join_dot
+spec_method_path = '{}.{}'.format(spec_cls_path, 'simple')
+lnum = 37
+lnum_class = 24
+
+
+def _file_path(name: str) -> str:
+    base = Path(__file__).parent
+    return '{}/_fixtures/run/{}.py'.format(base, name)
+
+
+simple_file_path = _file_path('simple')
+spec_file_lnum = '{}:{}'.format(simple_file_path, lnum)
+spec_file_lnum_class = '{}:{}'.format(simple_file_path, lnum_class)
+spec_file_lnum_file = '{}:1'.format(simple_file_path)
+
+
+def _lookup(spec: str, count: int=1, meth: Maybe=Empty()) -> SpecLocation:
+    result = lookup_loc(spec)
+    assert isinstance(result, Right)
+    locs = result.value
+    assert len(locs) == count
+    loc = locs[-1]
+    assert loc.mod == spec_mod
+    assert loc.cls == Simple
+    assert loc.meth == meth
+    return locs
+
 
 class RunSpec(Spec):
 
-    @property
-    def spec_path(self) -> str:
-        return 'unit.run_spec.Simple'
-
-    @property
-    def spec_path_method(self) -> str:
-        return '{}.{}'.format(self.spec_path, 'simple')
-
-    def _file_path(self, name: str) -> str:
-        base = Path(__file__).parent
-        return '{}/_fixtures/run/{}.py'.format(base, name)
-
-    @property
-    def simple_path(self) -> str:
-        return self._file_path('simple')
-
-    @property
-    def lnum(self) -> int:
-        return 37
-
-    @property
-    def lnum_class(self) -> int:
-        return 24
-
-    @property
-    def spec_file_lnum(self) -> List[str]:
-        return '{}:{}'.format(self.simple_path, self.lnum)
-
-    @property
-    def spec_file_lnum_class(self) -> List[str]:
-        return '{}:{}'.format(self.simple_path, self.lnum_class)
-
     def file_lnum_loc(self) -> None:
-        result = lookup_loc(self.spec_file_lnum)
-        assert isinstance(result, Right)
-        locs = result.value
-        assert len(locs) == 1
-        loc = locs[0]
-        assert loc.mod == 'unit._fixtures.run.simple'
-        assert loc.cls == Simple
-        assert loc.meth == Just('simple')
+        _lookup(spec_file_lnum, meth=Just('simple'))
 
     def file_lnum_loc_class(self) -> None:
-        result = lookup_loc(self.spec_file_lnum_class)
-        assert isinstance(result, Right)
-        locs = result.value
-        assert len(locs) == 1
-        loc = locs[0]
-        assert loc.mod == 'unit._fixtures.run.simple'
-        assert loc.cls == Simple
-        assert loc.meth == Empty()
+        _lookup(spec_file_lnum_class)
 
     def file_loc(self) -> None:
-        result = lookup_loc(self.simple_path)
-        assert isinstance(result, Right)
-        locs = result.value
-        assert len(locs) == 2
+        locs = _lookup(simple_file_path, count=2)
         loc_e = locs[0]
-        assert loc_e.mod == 'unit._fixtures.run.simple'
+        assert loc_e.mod == spec_mod
         assert loc_e.cls == EmptySpec
         assert loc_e.meth == Empty()
-        loc_s = locs[1]
-        assert loc_s.cls == Simple
-        assert loc_s.meth == Empty()
 
-    def method_loc(self) -> None:
-        result = lookup_loc('{}.simple'.format(self.spec_path))
-        assert isinstance(result, Right)
-        locs = result.value
-        assert len(locs) == 1
-        loc = locs[0]
-        assert loc.cls == Simple
-        assert loc.meth == Just('simple')
+    def file_lnum_loc_file(self) -> None:
+        _lookup(spec_file_lnum_file, count=2)
+
+    def file_loc_class(self) -> None:
+        _lookup('{}:{}'.format(simple_file_path, spec_cls_name))
+
+    # TODO
+    # def dir_loc(self) -> None:
+    #     _lookup(dir_path)
+
+    def path_mod(self) -> None:
+        _lookup(spec_mod, count=2)
+
+    # TODO
+    # def path_package(self) -> None:
+    #     _lookup(spec_pkg)
+
+    def path_class(self) -> None:
+        _lookup(spec_cls_path)
+
+    def path_class_method(self) -> None:
+        _lookup('{}.simple'.format(spec_cls_path), meth=Just(meth_name))
 
     def runners(self) -> None:
-        result = runners(List(self.spec_path))
+        result = runners(List(spec_cls_path))
         assert isinstance(result, Right)
         assert len(result.value) == 1
         runner = result.value[0]
@@ -112,36 +108,36 @@ class RunSpec(Spec):
         assert report == target_report_method
 
     def run_path(self) -> None:
-        self._run(List(self.spec_path))
+        self._run(List(spec_cls_path))
 
     def run_file_path_method(self) -> None:
-        self._run_method(self.spec_path_method)
+        self._run_method(spec_method_path)
 
     def run_file_lnum_method(self) -> None:
-        self._run_method(self.spec_file_lnum)
+        self._run_method(spec_file_lnum)
 
     def run_file_lnum_class(self) -> None:
-        self._run(List(self.spec_file_lnum_class))
+        self._run(List(spec_file_lnum_class))
 
     def run_file(self) -> None:
-        self._run(List(self.simple_path))
+        self._run(List(simple_file_path))
 
     def run_unsafe(self) -> None:
-        task = specs_run_task(List(self._file_path('unsafe')))
+        task = specs_run_task(List(_file_path('unsafe')))
         result = task.attempt
         assert isinstance(result, Right)
         report = result.value.report
         assert report == target_report_unsafe
 
     def run_exception(self) -> None:
-        task = specs_run_task(List(self._file_path('exception')))
+        task = specs_run_task(List(_file_path('exception')))
         result = task.attempt
         assert isinstance(result, Right)
         report = result.value.report
         assert report == target_report_exception
 
     def run_multi(self) -> None:
-        task = specs_run_task(List(self._file_path('multi')))
+        task = specs_run_task(List(_file_path('multi')))
         result = task.attempt
         assert isinstance(result, Right)
         exp_m = result.value.specs.head // __.results.lift(1) / _.result
