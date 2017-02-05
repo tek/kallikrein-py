@@ -5,7 +5,8 @@ from kallikrein.matchers import greater_equal, forall
 from kallikrein import k
 from kallikrein.expectable import ExpectationFailed, unsafe_k
 from kallikrein.matcher import Matcher
-from kallikrein.expectation import UnsafeExpectation
+from kallikrein.expectation import (UnsafeExpectation, AlgExpectation,
+                                    MultiExpectationResult)
 
 
 class ExpectationSpec(Spec):
@@ -50,5 +51,14 @@ class ExpectationSpec(Spec):
             assert result.value.success
         except ExpectationFailed as e:
             assert False, 'usafe matcher raised for success case: {}'.format(e)
+
+    def monoid(self) -> None:
+        e1 = k(1) == 1
+        e2 = k(2) == 3
+        es = List(e1, e2).fold(AlgExpectation)
+        result = es.evaluate.attempt
+        assert result.is_right
+        assert result.value.failure
+        assert isinstance(result.value, MultiExpectationResult)
 
 __all__ = ('ExpectationSpec',)

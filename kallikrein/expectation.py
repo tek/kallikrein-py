@@ -3,10 +3,11 @@ import operator
 import traceback
 from typing import Generic, TypeVar, Callable
 
-from hues import huestr
-
-from amino import Boolean, Task, L, _, List, __
+from amino import Boolean, Task, L, _, List, __, Map
 from amino.boolean import false, true
+from amino.tc.monoid import Monoid
+from amino.tc.base import AutoImplicitInstances
+from amino.lazy import lazy
 
 from kallikrein.matcher import Matcher
 from kallikrein.match_result import MatchResult, SuccessMatchResult
@@ -43,7 +44,7 @@ class ExpectationResult(abc.ABC):
 
 class SingleExpectationResult(ExpectationResult):
 
-    def __init__(self, exp: 'SingleExpectation', result: MatchResult) -> None:
+    def __init__(self, exp: 'Expectation', result: MatchResult) -> None:
         self.exp = exp
         self.result = result
 
@@ -155,11 +156,11 @@ class Expectation(Generic[A], abc.ABC):
 class AlgExpectation(Expectation):
 
     @abc.abstractmethod
-    def __and__(self, other: 'AlgExpectation') -> 'MultiExpectation':
+    def __and__(self, other: 'AlgExpectation') -> 'AlgExpectation':
         ...
 
     @abc.abstractmethod
-    def __or__(self, other: 'AlgExpectation') -> 'MultiExpectation':
+    def __or__(self, other: 'AlgExpectation') -> 'AlgExpectation':
         ...
 
 
@@ -178,10 +179,10 @@ class SingleExpectation(AlgExpectation):
         return '{}({}, {})'.format(self.__class__.__name__, self.matcher,
                                    self.value)
 
-    def __and__(self, other: AlgExpectation) -> 'MultiExpectation':
+    def __and__(self, other: AlgExpectation) -> AlgExpectation:
         return MultiExpectation(self, other, operator.and_)
 
-    def __or__(self, other: AlgExpectation) -> 'MultiExpectation':
+    def __or__(self, other: AlgExpectation) -> AlgExpectation:
         return MultiExpectation(self, other, operator.or_)
 
 
@@ -204,10 +205,10 @@ class MultiExpectation(AlgExpectation):
         return '{}({}, {})'.format(self.__class__.__name__, self.left,
                                    self.right)
 
-    def __and__(self, other: AlgExpectation) -> 'MultiExpectation':
+    def __and__(self, other: AlgExpectation) -> AlgExpectation:
         return MultiExpectation(self.left, self.right & other, self.op)
 
-    def __or__(self, other: AlgExpectation) -> 'MultiExpectation':
+    def __or__(self, other: AlgExpectation) -> AlgExpectation:
         return MultiExpectation(self.left, self.right | other, self.op)
 
 
@@ -216,6 +217,42 @@ class UnsafeExpectation(SingleExpectation):
     @property
     def evaluate(self) -> Task[ExpectationResult]:
         return Task.now(SingleExpectationResult(self, SuccessMatchResult()))
+
+
+class EmptyExpectation(AlgExpectation):
+
+    @property
+    def evaluate(self) -> Task[ExpectationResult]:
+        return Task.now(SingleExpectationResult(self, SuccessMatchResult()))
+
+    def __and__(self, other: AlgExpectation) -> AlgExpectation:
+        return other
+
+    def __or__(self, other: AlgExpectation) -> AlgExpectation:
+        return other
+
+
+class AlgExpectationInstances(AutoImplicitInstances):
+    tpe = AlgExpectation
+
+    @lazy
+    def _instances(self) -> Map:
+        return Map(
+            {
+                Monoid: AlgExpectationMonoid(),
+            }
+        )
+
+
+class AlgExpectationMonoid(Monoid):
+
+    @property
+    def empty(self) -> AlgExpectation:
+        return EmptyExpectation()
+
+    def combine(self, left: AlgExpectation, right: AlgExpectation
+                ) -> AlgExpectation:
+        return left & right
 
 
 class FatalSpec(Expectation):
