@@ -53,7 +53,23 @@ def comparison(op: Callable[[Number, Number], bool], op_s: str, op_f: str
                ) -> MatcherCtor:
     return matcher(L(SimpleComparison)(op, op_s, op_f, _))
 
-equal = eq = comparison(operator.eq, '==', '/=')
-greater_equal = ge = comparison(operator.ge, '>=', '<')
+equal = comparison(operator.eq, '==', '/=')
+eq = equal
 
-__all__ = ('equal', 'greater_equal')
+not_equal = comparison(operator.ne, '/=', '==')
+ne = not_equal
+
+greater_equal = comparison(operator.ge, '>=', '<')
+ge = greater_equal
+
+greater = comparison(operator.gt, '>', '<=')
+gt = greater
+
+less_equal = comparison(operator.le, '<=', '>')
+le = less_equal
+
+less = comparison(operator.lt, '<', '>=')
+lt = less
+
+__all__ = ('equal', 'greater_equal', 'eq', 'ge', 'greater', 'gt', 'less_equal',
+           'le', 'less', 'lt')
