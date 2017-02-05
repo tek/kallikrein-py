@@ -13,7 +13,7 @@ setup(
     url='https://github.com/tek/kallikrein',
     packages=find_packages(exclude=['unit', 'unit.*']),
     install_requires=[
-        'amino>=9.1.1',
+        'amino>=9.2.0',
         'golgi',
         'hues',
     ],
