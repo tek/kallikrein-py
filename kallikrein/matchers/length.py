@@ -1,7 +1,6 @@
 from typing import Sized
 
-from kallikrein.match_result import (MatchResult, SimpleMatchResult,
-                                     BadNestedMatch)
+from kallikrein.match_result import MatchResult, SimpleMatchResult
 
 from amino import Boolean
 from amino.boolean import false
@@ -25,7 +24,11 @@ class Length(Matcher[Sized]):
         )
 
     def match_nested(self, exp: Sized, target: Matcher) -> MatchResult[Sized]:
-        return BadNestedMatch(self)
+        return (
+            target.evaluate(len(exp))
+            if hasattr(exp, '__len__') else
+            SimpleMatchResult(false, '`{}` has no length'.format(exp))
+        )
 
 length = matcher(Length)
 have_length = length

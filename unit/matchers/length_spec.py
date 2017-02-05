@@ -5,6 +5,7 @@ from kallikrein import k
 from kallikrein.matchers.length import have_length
 from kallikrein.expectation import Expectation
 from kallikrein.match_result import MatchResult
+from kallikrein.matchers import greater_equal
 
 
 class LengthSpec(Spec):
@@ -25,5 +26,11 @@ class LengthSpec(Spec):
     def wrong_type(self) -> None:
         result = self._run(k(3).must(have_length(3)), False)
         assert 'has no length' in result.report
+
+    def success_nested(self) -> None:
+        self._run(k(List(2, 3, 4)).must(have_length(greater_equal(2))), True)
+
+    def failure_nested(self) -> None:
+        self._run(k(List(2, 3, 4)).must(have_length(greater_equal(4))), False)
 
 __all__ = ('LengthSpec',)
