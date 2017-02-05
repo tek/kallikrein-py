@@ -6,6 +6,7 @@ from kallikrein.run.main import runners, specs_run_task, lookup_loc
 from kallikrein.run.line import SpecLine
 from kallikrein.expectation import MultiExpectationResult
 from kallikrein.run.data import SpecLocation
+from kallikrein.match_result import MatchResult
 
 from unit._fixtures.run.simple import (Simple, target_report, EmptySpec,
                                        target_report_method)
@@ -93,11 +94,15 @@ class RunSpec(Spec):
         assert len(lines) == 9
         assert len(lines.filter_type(SpecLine)) == 3
 
-    def _run(self, specs: List[str]) -> None:
+    def _run(self, specs: List[str]) -> MatchResult:
         task = specs_run_task(specs)
         result = task.attempt
         assert isinstance(result, Right)
-        report = result.value.report
+        return result.value
+
+    def _run_simple(self, specs: List[str]) -> None:
+        result = self._run(specs)
+        report = result.report
         assert report == target_report
 
     def _run_method(self, spec: str) -> None:
@@ -108,7 +113,7 @@ class RunSpec(Spec):
         assert report == target_report_method
 
     def run_path(self) -> None:
-        self._run(List(spec_cls_path))
+        self._run_simple(List(spec_cls_path))
 
     def run_file_path_method(self) -> None:
         self._run_method(spec_method_path)
@@ -117,10 +122,10 @@ class RunSpec(Spec):
         self._run_method(spec_file_lnum)
 
     def run_file_lnum_class(self) -> None:
-        self._run(List(spec_file_lnum_class))
+        self._run_simple(List(spec_file_lnum_class))
 
     def run_file(self) -> None:
-        self._run(List(simple_file_path))
+        self._run_simple(List(simple_file_path))
 
     def run_unsafe(self) -> None:
         task = specs_run_task(List(_file_path('unsafe')))
