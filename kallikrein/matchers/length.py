@@ -27,6 +27,7 @@ class Length(Matcher[Sized]):
     def match_nested(self, exp: Sized, target: Matcher) -> MatchResult[Sized]:
         return BadNestedMatch(self)
 
-length = have_length = matcher(Length)
+length = matcher(Length)
+have_length = length
 
 __all__ = ('Length', 'length', 'have_length')
