@@ -26,18 +26,16 @@ class ExpectableBase(Generic[A], abc.ABC):
 
     must = __call__
 
-    def __eq__(self, value: A) -> MatchResult[A]:
+    def __eq__(self, value: A) -> MatchResult[A]:  # type: ignore
         return self.must(equal(value))
 
     def safe_match(self, matcher: Matcher[A]) -> SingleExpectation:
         return self.default_expectation(matcher)
 
     def unsafe_match(self, matcher: Matcher[A]) -> UnsafeExpectation:
-        match = self.safe_match(matcher).evaluate.attempt
-        if not match.exists(_.success):
-            raise ExpectationFailed(match.map(_.report_lines) | List())
-        else:
-            return UnsafeExpectation(match, self.value)
+        expectation = self.safe_match(matcher)
+        expectation.fatal_eval()
+        return UnsafeExpectation(matcher, self.value)
 
     def default_expectation(self, matcher: Matcher[A]) -> MatchResult[A]:
         return SingleExpectation(matcher, self.value)

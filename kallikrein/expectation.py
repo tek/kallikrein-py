@@ -152,6 +152,15 @@ class Expectation(Generic[A], abc.ABC):
     def evaluate(self) -> Task[ExpectationResult]:
         ...
 
+    @property
+    def unsafe_eval(self) -> Boolean:
+        return self.evaluate.attempt.exists(_.success)
+
+    def fatal_eval(self) -> None:
+        result = self.evaluate.attempt
+        if not result.exists(_.success):
+            raise ExpectationFailed(result.map(_.report_lines) | List())
+
 
 class AlgExpectation(Expectation):
 
