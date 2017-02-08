@@ -54,6 +54,9 @@ k(3).must(equal(3)) & k(4).must(greater_equal(2)) | k(List(2)).must(contain(2))
 ```
 associativity via parentheses is not yet implemented.
 
+If a spec class has `setup` and `teardown` methods, they are called once before
+and after each individual spec.
+
 ## Run
 ```
 % klk mod.path.to.ASpec

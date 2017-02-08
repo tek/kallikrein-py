@@ -71,11 +71,15 @@ class SpecRunner:
                 if self.unsafe else
                 Task.failed(err.format(line.text, expectation)))
         def run(inst: Any) -> Task[ResultLine]:
+            def teardown(a: ExpectationResult) -> None:
+                if hasattr(inst, 'teardown'):
+                    inst.teardown()
             if hasattr(inst, 'setup'):
                 inst.setup()
             return (
                 Task.delay(execute, line.spec, inst) //
-                evaluate /
+                evaluate %
+                teardown /
                 L(ResultLine)(line.text, inst, _)
             )
         return Task.delay(self.spec_cls) // run
