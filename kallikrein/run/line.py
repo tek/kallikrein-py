@@ -3,8 +3,9 @@ from typing import Any, Callable
 
 from amino import List
 
-from kallikrein.util.string import indent, red_cross, green_check
-from kallikrein.expectation import ExpectationResult, Expectation
+from kallikrein.util.string import indent, red_cross, green_check, yellow_clock
+from kallikrein.expectation import (ExpectationResult, Expectation,
+                                    PendingExpectationResult)
 
 
 class Line(abc.ABC):
@@ -51,7 +52,13 @@ class ResultLine(SimpleLine):
 
     @property
     def sign(self) -> str:
-        return green_check if self.result.success else red_cross
+        return (
+            green_check
+            if self.result.success else
+            yellow_clock
+            if isinstance(self.result, PendingExpectationResult) else
+            red_cross
+        )
 
     @property
     def output_lines(self) -> List[str]:
@@ -89,5 +96,9 @@ class SpecLine(Line):
 
     def exclude_by_name(self, name: str) -> bool:
         return self.name != name
+
+
+class PendingSpecLine(Line):
+    pass
 
 __all__ = ('Line', 'PlainLine', 'SpecLine', 'ResultLine')

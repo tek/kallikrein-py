@@ -57,6 +57,13 @@ associativity via parentheses is not yet implemented.
 If a spec class has `setup` and `teardown` methods, they are called once before
 and after each individual spec.
 
+The decorator `kallikrein.pending` can be used to mark a spec as pending:
+```python
+@pending
+def not_implemented_yet(self):
+  pass
+```
+
 ## Run
 ```
 % klk mod.path.to.ASpec

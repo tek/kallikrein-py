@@ -1,10 +1,13 @@
 from amino.test import Spec
 from amino import List, Right, Left, Path, Just, Empty, __, _, Maybe
 from amino.list import Lists
+from amino.task import TaskException
 
 from kallikrein.run.main import runners, specs_run_task, lookup_loc
 from kallikrein.run.line import SpecLine
-from kallikrein.expectation import MultiExpectationResult
+from kallikrein.expectation import (MultiExpectationResult,
+                                    PendingExpectationResult,
+                                    SingleExpectationResult)
 from kallikrein.run.data import SpecLocation
 from kallikrein.match_result import MatchResult
 
@@ -12,13 +15,25 @@ from unit._fixtures.run.simple import (Simple, target_report, EmptySpec,
                                        target_report_method)
 from unit._fixtures.run.unsafe import target_report_unsafe
 from unit._fixtures.run.exception import target_report_exception
+from unit._fixtures.run.pending import PendingSpec
+
+
+def _spec_path(cls: type) -> str:
+    mod = cls.__module__
+    name = cls.__name__
+    return '{}.{}'.format(mod, name)
 
 spec_mod = Simple.__module__
 meth_name = Simple.simple.__name__
 spec_path_parts = Lists.split(spec_mod, '.')
+
 spec_cls_name = Simple.__name__
+empty_cls_name = EmptySpec.__name__
+
 spec_cls_path = spec_path_parts.cat(spec_cls_name).join_dot
 spec_method_path = '{}.{}'.format(spec_cls_path, 'simple')
+empty_cls_path = spec_path_parts.cat(empty_cls_name).join_dot
+
 lnum = 37
 lnum_class = 24
 
@@ -151,8 +166,25 @@ class RunSpec(Spec):
         assert isinstance(exp, MultiExpectationResult)
 
     def no_docstring(self) -> None:
-        result = specs_run_task(List('unit.run_spec.EmptySpec'))
-        assert isinstance(result.attempt, Left)
+        task = specs_run_task(List(empty_cls_path))
+        result = task.attempt
+        assert isinstance(result, Left)
+        value = result.value
+        assert isinstance(value, TaskException)
+        err = SpecLocation.no_docstring_msg.format(empty_cls_name)
+        assert str(value.cause) == err
+
+    def pending_spec(self) -> None:
+        task = specs_run_task(List(_spec_path(PendingSpec)))
+        result = task.attempt
+        assert result.present
+        value = result.value.specs.head / _.results
+        pending = value // __.lift(1) / _.result
+        assert pending.present
+        assert isinstance(pending.x, PendingExpectationResult)
+        active = value // __.lift(2) / _.result
+        assert active.present
+        assert isinstance(active.x, SingleExpectationResult)
 
 
 __all__ = ('RunSpec',)

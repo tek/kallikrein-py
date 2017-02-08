@@ -6,6 +6,7 @@ from kallikrein.expectation import ExpectationResult
 
 
 class SpecLocation:
+    no_docstring_msg = 'spec class `{}` has no docstring'
 
     @staticmethod
     def create(mod: str, cls: str, meth: Maybe[str], allow_empty: bool=False
@@ -44,8 +45,7 @@ class SpecLocation:
     def doc(self) -> Either[str, str]:
         return (
             Maybe(self.cls.__doc__)
-            .to_either('spec class `{}` has no docstring'
-                       .format(self.cls.__name__))
+            .to_either(SpecLocation.no_docstring_msg.format(self.cls.__name__))
         )
 
 

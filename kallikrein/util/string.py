@@ -20,4 +20,7 @@ green_check = green('✓')
 
 red_cross = red('✗')
 
-__all__ = ('indent', 'green_check', 'red_cross', 'green', 'red')
+yellow_clock = yellow('⌚')
+
+__all__ = ('indent', 'green_check', 'red_cross', 'green', 'red',
+           'yellow_clock')

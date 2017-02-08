@@ -1,7 +1,8 @@
 import abc
 import operator
 import traceback
-from typing import Generic, TypeVar, Callable
+import functools
+from typing import Generic, TypeVar, Callable, Any
 
 from amino import Boolean, Task, L, _, List, __, Map
 from amino.boolean import false, true
@@ -137,6 +138,20 @@ class FailedUnsafeSpecResult(ExpectationResult):
     @property
     def report_lines(self) -> List[str]:
         return indent(self.error.report).cons('unsafe spec failed:')
+
+
+class PendingExpectationResult(ExpectationResult):
+
+    def __init__(self, exp: 'Expectation') -> None:
+        self.exp = exp
+
+    @property
+    def success(self) -> Boolean:
+        return false
+
+    @property
+    def report_lines(self) -> List[str]:
+        return List('pending')
 
 
 class InvalidExpectation(Exception):
@@ -285,5 +300,23 @@ class FailedUnsafeSpec(Expectation):
     def evaluate(self) -> Task[ExpectationResult]:
         return Task.now(FailedUnsafeSpecResult(self.name, self.error))
 
+
+class PendingExpectation(Expectation):
+
+    def __init__(self, original: Callable[[Any], Expectation]) -> None:
+        self.original = original
+
+    @property
+    def evaluate(self) -> Task[ExpectationResult]:
+        return Task.now(PendingExpectationResult(self))
+
+
+def pending(f: Callable[[Any], Expectation]) -> Callable[[Any], Expectation]:
+    @functools.wraps(f)
+    def wrapper(self: Any) -> Expectation:
+        return PendingExpectation(f)
+    return wrapper
+
 __all__ = ('Expectation', 'SingleExpectation', 'UnsafeExpectation',
-           'unsafe_expectation_result', 'FatalSpec', 'FailedUnsafeSpec')
+           'unsafe_expectation_result', 'FatalSpec', 'FailedUnsafeSpec',
+           'pending')
