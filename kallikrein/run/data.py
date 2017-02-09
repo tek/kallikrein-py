@@ -1,24 +1,90 @@
-from amino import Maybe, Either, L, _, Right, Empty, List, Boolean
+from amino import Maybe, Either, L, _, Right, Empty, List, Boolean, Path
 from amino.list import Lists
 from amino.logging import Logging
 
 from kallikrein.expectation import ExpectationResult
 
 
+class Selector:
+    pass
+
+
+class ModuleSelector(Selector):
+
+    def __init__(self, mod: str) -> None:
+        self.mod = mod
+
+
+class ClassSelector(Selector):
+
+    def __init__(self, mod: str, cls: str) -> None:
+        self.mod = mod
+        self.cls = cls
+
+
+class MethodSelector(Selector):
+
+    def __init__(self, mod: str, cls: str, method: str) -> None:
+        self.mod = mod
+        self.cls = cls
+        self.method = method
+
+
+class DirSelector(Selector):
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+
+class FileSelector(Selector):
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+
+class FileClassSelector(Selector):
+
+    def __init__(self, path: Path, cls: str) -> None:
+        self.path = path
+        self.cls = cls
+
+
+class FileMethodSelector(Selector):
+
+    def __init__(self, path: Path, cls: str, method: str) -> None:
+        self.path = path
+        self.cls = cls
+        self.method = method
+
+
+class LineSelector(Selector):
+
+    def __init__(self, path: str, lnum: int) -> None:
+        self.path = path
+        self.lnum = lnum
+
+
 class SpecLocation:
     no_docstring_msg = 'spec class `{}` has no docstring'
 
     @staticmethod
-    def create(mod: str, cls: str, meth: Maybe[str], allow_empty: bool=False
-               ) -> Either[str, 'SpecLocation']:
+    def create(mod: str, cls: str, meth: Maybe[str], selector: Selector,
+               allow_empty: bool=False) -> Either[str, 'SpecLocation']:
         return (
             Either.import_name(mod, cls) /
-            L(SpecLocation)(mod, _, meth, allow_empty)
+            L(SpecLocation)(mod, _, meth, selector, allow_empty)
         )
 
     @staticmethod
     def from_path(path: str) -> Either[str, 'SpecLocation']:
         parts = Lists.split(path, '.')
+        def create(mod: str, cls: type, meth: Maybe[str]) -> SpecLocation:
+            selector = (
+                meth /
+                L(MethodSelector)(mod, cls.__name__, _) |
+                ClassSelector(mod, cls.__name__)
+            )
+            return SpecLocation(mod, cls, meth, selector)
         return (
             Right(parts.drop_right(1).join_dot)
             .product2(Either.import_path(path), Right(Empty()))
@@ -27,19 +93,21 @@ class SpecLocation:
                 .product2(Either.import_path(parts.drop_right(1).join_dot),
                           Right(parts.last))
             )
-            .map3(SpecLocation)
+            .map3(create)
         )
 
-    def __init__(self, mod: str, cls: type, meth: Maybe[str], allow_empty:
-                 bool=False) -> None:
+    def __init__(self, mod: str, cls: type, meth: Maybe[str],
+                 selector: Selector, allow_empty: bool=False) -> None:
         self.mod = mod
         self.cls = cls
         self.meth = meth
+        self.selector = selector
         self.allow_empty = Boolean(allow_empty)
 
     def __str__(self) -> str:
-        return '{}({}, {}, {})'.format(self.__class__.__name__, self.mod,
-                                       self.cls, self.meth)
+        return '{}({}, {}, {}, {})'.format(self.__class__.__name__, self.mod,
+                                           self.cls, self.meth,
+                                           self.allow_empty)
 
     @property
     def doc(self) -> Either[str, str]:

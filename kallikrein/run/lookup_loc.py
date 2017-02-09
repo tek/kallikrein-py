@@ -5,7 +5,9 @@ from amino import Path, Either, List, _, Just, Empty, L, Left, __
 from amino.util.numeric import parse_int
 from amino.list import Lists
 
-from kallikrein.run.data import SpecLocation
+from kallikrein.run.data import (SpecLocation, LineSelector,
+                                 FileMethodSelector, FileClassSelector,
+                                 FileSelector, ModuleSelector)
 
 dir_loc_regex = None
 file_loc_regex = Regex(
@@ -29,13 +31,15 @@ def resolve_module(path: Path) -> str:
 def lookup_file(loc: str) -> Either[str, List[SpecLocation]]:
     path = Path(loc)
     mod = resolve_module(path)
+    selector = FileSelector(path)
     return (
         (
             List.lines(path.read_text()) //
             cls_regex.match //
             __.group('name')
         )
-        .traverse(L(SpecLocation.create)(mod, _, Empty(), True), Either)
+        .traverse(
+            L(SpecLocation.create)(mod, _, Empty(), selector, True), Either)
         if path.is_file() else
         Left('invalid path: {}'.format(loc))
     )
@@ -44,15 +48,16 @@ def lookup_file(loc: str) -> Either[str, List[SpecLocation]]:
 def lookup_file_lnum(path: Path, mod: str, lnum: int
                      ) -> Either[str, SpecLocation]:
     content = List.lines(path.read_text())[:lnum + 1].reversed
+    selector = LineSelector(path, lnum)
     def found_def(name: str) -> Either[str, SpecLocation]:
         cls = content.find_map(cls_regex.match) // __.group('name')
-        return cls // L(SpecLocation.create)(mod, _, Just(name))
+        return cls // L(SpecLocation.create)(mod, _, Just(name), selector)
     def found_cls_def(match: Match) -> Either[str, SpecLocation]:
         name = match.group('name')
         return (
             name // found_def
             if match.group('kw').contains('def') else
-            name // L(SpecLocation.create)(mod, _, Empty())
+            name // L(SpecLocation.create)(mod, _, Empty(), selector)
         )
     loc = content.find_map(cls_def_regex.match)
     return loc // found_cls_def
@@ -62,9 +67,16 @@ def lookup_file_select(fpath: Path, mod: str, select: str
                        ) -> Either[str, List[SpecLocation]]:
     parts = Lists.split(select, '.')
     meth = parts.lift(1)
+    def create(cls: str) -> Either[str, SpecLocation]:
+        selector = (
+            meth /
+            L(FileMethodSelector)(fpath, cls, meth) |
+            FileClassSelector(fpath, cls)
+        )
+        return SpecLocation.create(mod, cls, meth, selector)
     return (
         parts.head.to_either('empty select') //
-        L(SpecLocation.create)(mod, _, meth) /
+        create /
         List
     )
 
@@ -103,9 +115,10 @@ def handle_file(match: Match, fpath: Path) -> Either[str, List[SpecLocation]]:
 
 
 def lookup_path_classes(mod: ModuleType) -> List[SpecLocation]:
-    names = List.wrap(mod.__all__)
+    names = List.wrap(mod.__all__)  # type: ignore
+    selector = ModuleSelector(mod.__name__)
     return names.traverse(
-        L(SpecLocation.create)(mod.__name__, _, Empty()), Either)
+        L(SpecLocation.create)(mod.__name__, _, Empty(), selector), Either)
 
 
 def handle_path(match: Match, path: str) -> Either[str, List[SpecLocation]]:
@@ -128,5 +141,5 @@ def lookup_loc(loc: str) -> Either[str, List[SpecLocation]]:
         Left('invalid spec location: {}'.format(loc))
     )
 
-__all__ = ('lookup_loc', 'lookup_by_path', 'lookup_file_lnum',
-           'lookup_file')
+__all__ = ('lookup_loc', 'lookup_file_lnum', 'lookup_file',
+           'lookup_file_select')
