@@ -33,9 +33,10 @@ empty_cls_name = EmptySpec.__name__
 spec_cls_path = spec_path_parts.cat(spec_cls_name).join_dot
 spec_method_path = '{}.{}'.format(spec_cls_path, 'simple')
 empty_cls_path = spec_path_parts.cat(empty_cls_name).join_dot
+empty_method_path = '{}.{}'.format(empty_cls_path, 'specific')
 
-lnum = 37
-lnum_class = 24
+lnum = 39
+lnum_class = 26
 
 
 def _file_path(name: str) -> str:
@@ -173,6 +174,11 @@ class RunSpec(Spec):
         assert isinstance(value, TaskException)
         err = SpecLocation.no_docstring_msg.format(empty_cls_name)
         assert str(value.cause) == err
+
+    def no_docstring_specific(self) -> None:
+        task = specs_run_task(List(empty_method_path))
+        result = task.attempt
+        assert result.present
 
     def pending_spec(self) -> None:
         task = specs_run_task(List(_spec_path(PendingSpec)))

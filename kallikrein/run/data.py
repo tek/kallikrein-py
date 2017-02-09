@@ -6,7 +6,10 @@ from kallikrein.expectation import ExpectationResult
 
 
 class Selector:
-    pass
+
+    @property
+    def specific(self) -> Boolean:
+        return Boolean(isinstance(self, (MethodSelector, FileMethodSelector)))
 
 
 class ModuleSelector(Selector):
@@ -110,9 +113,14 @@ class SpecLocation:
                                            self.allow_empty)
 
     @property
+    def fallback_doc(self) -> Maybe[str]:
+        return self.meth // self.selector.specific.m
+
+    @property
     def doc(self) -> Either[str, str]:
         return (
             Maybe(self.cls.__doc__)
+            .o(self.fallback_doc)
             .to_either(SpecLocation.no_docstring_msg.format(self.cls.__name__))
         )
 

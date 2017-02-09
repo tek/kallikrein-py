@@ -1,13 +1,15 @@
 from amino import List
 
-from kallikrein.match_result import MatchResult
 from kallikrein.matchers import greater_equal, contain, forall
-from kallikrein import k
+from kallikrein import k, Expectation
 from kallikrein.util.string import green_check, red_cross, yellow
 
 
 class EmptySpec:
-    pass
+
+    def specific(self) -> Expectation:
+        return k(1) == 1
+
 
 l1 = 'example specifications'
 l2 = 'this test is simple'
@@ -32,13 +34,13 @@ class Simple:
     def setup(self) -> None:
         self.a = 3
 
-    def simple(self) -> MatchResult:
+    def simple(self) -> Expectation:
         return k(3).must(greater_equal(self.a))
 
-    def nested(self) -> MatchResult:
+    def nested(self) -> Expectation:
         return k(List(1, 2, 3)).must(contain(greater_equal(self.a)))
 
-    def failure(self) -> MatchResult:
+    def failure(self) -> Expectation:
         return k(List('abc', 'abc', 'ac')).must(forall(contain('b')))
 
 
