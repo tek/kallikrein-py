@@ -1,7 +1,10 @@
+import inspect
+
 from amino.test import Spec
 from amino import List, Right, Left, Path, Just, Empty, __, _, Maybe
 from amino.list import Lists
 from amino.task import TaskException
+from amino.test.path import base_dir
 
 from kallikrein.run.main import (runners, specs_run_task, lookup_loc,
                                  specs_run_task_lazy, convert_lazy_result)
@@ -25,9 +28,11 @@ def _spec_path(cls: type) -> str:
     name = cls.__name__
     return '{}.{}'.format(mod, name)
 
-spec_mod = Simple.__module__
+spec_mod = inspect.getmodule(Simple)
+spec_mod_name = spec_mod.__name__
+spec_pkg = spec_mod.__package__
 meth_name = Simple.simple.__name__
-spec_path_parts = Lists.split(spec_mod, '.')
+spec_path_parts = Lists.split(spec_mod_name, '.')
 
 spec_cls_name = Simple.__name__
 empty_cls_name = EmptySpec.__name__
@@ -40,10 +45,12 @@ empty_method_path = '{}.{}'.format(empty_cls_path, 'specific')
 lnum = 39
 lnum_class = 26
 
+base = Path(__file__).parent
+main_dir = base_dir() / '_fixtures' / 'run'
+
 
 def _file_path(name: str) -> str:
-    base = Path(__file__).parent
-    return '{}/_fixtures/run/{}.py'.format(base, name)
+    return str(main_dir / '{}.py'.format(name))
 
 
 simple_file_path = _file_path('simple')
@@ -54,11 +61,11 @@ spec_file_lnum_file = '{}:1'.format(simple_file_path)
 
 def _lookup(spec: str, count: int=1, meth: Maybe=Empty()) -> SpecLocation:
     result = lookup_loc(spec)
-    assert isinstance(result, Right)
+    assert result.present
     locs = result.value
     assert len(locs) == count
     loc = locs[-1]
-    assert loc.mod == spec_mod
+    assert loc.mod == spec_mod_name
     assert loc.cls == Simple
     assert loc.meth == meth
     return locs
@@ -75,7 +82,7 @@ class RunSpec(Spec):
     def file_loc(self) -> None:
         locs = _lookup(simple_file_path, count=2)
         loc_e = locs[0]
-        assert loc_e.mod == spec_mod
+        assert loc_e.mod == spec_mod_name
         assert loc_e.cls == EmptySpec
         assert loc_e.meth == Empty()
 
@@ -85,16 +92,20 @@ class RunSpec(Spec):
     def file_loc_class(self) -> None:
         _lookup('{}:{}'.format(simple_file_path, spec_cls_name))
 
-    # TODO
-    # def dir_loc(self) -> None:
-    #     _lookup(dir_path)
+    def dir_loc(self) -> None:
+        result = lookup_loc(str(main_dir))
+        assert result.present
+        locs = result.value
+        assert len(locs) == 7
 
     def path_mod(self) -> None:
-        _lookup(spec_mod, count=2)
+        _lookup(spec_mod_name, count=2)
 
-    # TODO
-    # def path_package(self) -> None:
-    #     _lookup(spec_pkg)
+    def path_package(self) -> None:
+        result = lookup_loc(Lists.split(spec_pkg, '.')[:2].join_dot)
+        assert result.present
+        locs = result.value
+        assert len(locs) == 7
 
     def path_class(self) -> None:
         _lookup(spec_cls_path)

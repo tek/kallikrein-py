@@ -80,6 +80,15 @@ Optionally, a line number or method name can be appended to run a single case:
 % klk mod.path.to.ASpec.simple
 ```
 
+Modules, packages, directories and files are valid as well, in which case a
+recursive search is done returning all valid specs specified in the modules'
+`__all__` attribute:
+
+```
+% klk mod.path
+% klk mod/path/to
+```
+
 ## Extend
 `must` expects a subclass of `Matcher` for its argument which can be
 customized easily. The matcher should calculate a `MatchResult` containing

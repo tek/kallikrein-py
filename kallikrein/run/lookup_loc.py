@@ -1,4 +1,5 @@
 from types import ModuleType
+import pkgutil
 
 from amino.regex import Regex, Match
 from amino import Path, Either, List, _, Just, Empty, L, Left, __
@@ -97,10 +98,6 @@ def handle_file_lnum(match: Match, mod: str, fpath: Path
     )
 
 
-def handle_dir(match: Match, dpath: Path) -> Either[str, List[SpecLocation]]:
-    return Left('dir not implemented yet')
-
-
 def handle_file(match: Match, fpath: Path) -> Either[str, List[SpecLocation]]:
     mod = resolve_module(fpath)
     return (
@@ -108,36 +105,58 @@ def handle_file(match: Match, fpath: Path) -> Either[str, List[SpecLocation]]:
         .o(lambda: handle_file_lnum(match, mod, fpath))
         .o(lambda: lookup_file(fpath))
         if fpath.is_file() else
-        handle_dir(match, fpath)
+        handle_dir(fpath)
         if fpath.is_dir() else
         Left('{} is not a file or dir'.format(fpath))
     )
 
 
-def lookup_path_classes(mod: ModuleType) -> List[SpecLocation]:
+def lookup_module(mod: ModuleType) -> List[SpecLocation]:
     names = List.wrap(mod.__all__)  # type: ignore
     selector = ModuleSelector(mod.__name__)
-    return names.traverse(
-        L(SpecLocation.create)(mod.__name__, _, Empty(), selector), Either)
+    return names // L(SpecLocation.create)(mod.__name__, _, Empty(), selector)
 
 
-def handle_path(match: Match, path: str) -> Either[str, List[SpecLocation]]:
+def lookup_package(mod: ModuleType) -> List[SpecLocation]:
+    name = mod.__name__
+    path = mod.__path__  # type: ignore
     return (
-        (Either.import_module(path) // lookup_path_classes)
+        List.wrap(pkgutil.walk_packages(path, prefix='{}.'.format(name)))
+        .filter_not(_.ispkg)
+        .map(_.name) //
+        Either.import_module //
+        lookup_path
+    )
+
+
+def lookup_path(path: ModuleType) -> List[SpecLocation]:
+    l = lookup_package if path.__package__ == path.__name__ else lookup_module
+    return l(path)
+
+
+def handle_path(path: str) -> Either[str, List[SpecLocation]]:
+    return (
+        (Either.import_module(path) / lookup_path)
         .o(lambda: SpecLocation.from_path(path) / List)
     )
 
 
+def handle_dir(dpath: Path) -> Either[str, List[SpecLocation]]:
+    return Either.import_module(resolve_module(dpath)) / lookup_path
+
+
 def lookup_loc(loc: str) -> Either[str, List[SpecLocation]]:
+    fpath = Path(loc)
     file_match = file_loc_regex.match(loc)
     path_match = path_loc_regex.match(loc)
     return (
-        path_match.flat_apzip(__.group('path'))
-        .flat_map2(handle_path)
+        path_match // __.group('path') // handle_path
         if path_match.present else
         file_match.flat_apzip(lambda a: a.group('path') / Path)
         .flat_map2(handle_file)
         if file_match.present else
+        handle_dir(fpath)
+        if fpath.is_dir() else
         Left('invalid spec location: {}'.format(loc))
     )
 

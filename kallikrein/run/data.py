@@ -86,7 +86,8 @@ class SpecLocation:
     def create(mod: str, cls: str, meth: Maybe[str], selector: Selector,
                allow_empty: bool=False) -> Either[str, 'SpecLocation']:
         return (
-            Either.import_name(mod, cls) /
+            Either.import_name(mod, cls)
+            .filter(inspect.isclass) /
             L(SpecLocation)(mod, _, meth, selector, allow_empty)
         )
 
@@ -123,6 +124,9 @@ class SpecLocation:
         return '{}({}, {}, {}, {})'.format(self.__class__.__name__, self.mod,
                                            self.cls, self.meth,
                                            self.allow_empty)
+
+    def __repr__(self) -> str:
+        return str(self)
 
     @property
     def use_all_specs(self) -> Boolean:

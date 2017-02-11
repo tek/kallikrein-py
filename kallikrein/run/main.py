@@ -197,6 +197,9 @@ def kallikrein_run(specs: List[str]) -> Either[Exception, SpecsResult]:
 
 
 def kallikrein_run_lazy(specs: List[str]) -> Either[Exception, SpecsResult]:
-    return specs_run_task_lazy(specs) / L(convert_lazy_result)(_, True)
+    return (
+        specs_run_task_lazy(specs) /
+        L(convert_lazy_result)(_, True)
+    ).leffect(run_error)
 
 __all__ = ('kallikrein_run',)
