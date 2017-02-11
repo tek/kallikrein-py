@@ -7,7 +7,7 @@ from amino.list import Lists
 from amino.logging import Logging
 from amino.util.string import snake_case
 
-from kallikrein.expectation import ExpectationResult
+from kallikrein.run.line import Line
 
 
 class Selector:
@@ -146,11 +146,11 @@ class SpecLocation:
     @property
     def fallback_doc(self) -> Maybe[str]:
         meth = lambda name: '{} ${}'.format(convert_underscores(name), name)
-        def doc() -> List[str]:
+        def synthetic() -> List[str]:
             meths = (self.meth / meth / List) | (self.cls_methods / meth)
             cls = convert_underscores(snake_case(self.cls.__name__))
             return meths.cons(cls).join_lines
-        return self.need_no_doc.m(doc)
+        return self.need_no_doc.m(synthetic)
 
     @property
     def doc(self) -> Either[str, str]:
@@ -163,7 +163,7 @@ class SpecLocation:
 
 class SpecResult(Logging):
 
-    def __init__(self, results: List[ExpectationResult]) -> None:
+    def __init__(self, results: List[Line]) -> None:
         self.results = results
 
     @property
@@ -185,6 +185,6 @@ class SpecsResult(Logging):
         return self.report_lines.join_lines
 
     def print_report(self) -> None:
-        self.log.info(self.report)
+        self.report_lines % self.log.info
 
 __all__ = ('SpecLocation', 'SpecResult', 'SpecsResult')

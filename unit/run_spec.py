@@ -3,7 +3,8 @@ from amino import List, Right, Left, Path, Just, Empty, __, _, Maybe
 from amino.list import Lists
 from amino.task import TaskException
 
-from kallikrein.run.main import runners, specs_run_task, lookup_loc
+from kallikrein.run.main import (runners, specs_run_task, lookup_loc,
+                                 specs_run_task_lazy, convert_lazy_result)
 from kallikrein.run.line import SpecLine
 from kallikrein.expectation import (MultiExpectationResult,
                                     PendingExpectationResult,
@@ -198,6 +199,13 @@ class RunSpec(Spec):
         result = task.attempt
         assert result.present
         assert len(result.value.report_lines) == 3
+
+    def stream(self) -> None:
+        e = specs_run_task_lazy(List(spec_cls_path))
+        assert e.present
+        results = e.value
+        spec_result = convert_lazy_result(results, False)
+        assert spec_result.report == target_report
 
 
 __all__ = ('RunSpec',)

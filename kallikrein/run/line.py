@@ -2,13 +2,17 @@ import abc
 from typing import Any, Callable
 
 from amino import List
+from amino.task import TaskException
+from amino.list import Lists
+
+from amino.logging import Logging
 
 from kallikrein.util.string import indent, red_cross, green_check, yellow_clock
 from kallikrein.expectation import (ExpectationResult, Expectation,
                                     PendingExpectationResult)
 
 
-class Line(abc.ABC):
+class Line(Logging, abc.ABC):
 
     def __init__(self, text: str) -> None:
         self.text = text.strip()
@@ -27,6 +31,9 @@ class Line(abc.ABC):
     @abc.abstractmethod
     def exclude_by_name(self, name: str) -> bool:
         ...
+
+    def print_report(self) -> None:
+        self.output_lines % self.log.info
 
 
 class SimpleLine(Line):
@@ -98,7 +105,17 @@ class SpecLine(Line):
         return self.name != name
 
 
-class PendingSpecLine(Line):
-    pass
+class FatalLine(SimpleLine):
+    header = 'error during spec run:'
 
-__all__ = ('Line', 'PlainLine', 'SpecLine', 'ResultLine')
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    @property
+    def output_lines(self) -> List[str]:
+        e = self.error
+        msg = e.cause if isinstance(e, TaskException) else e  # type: ignore
+        return Lists.lines(str(msg)).cons(FatalLine.header)
+
+
+__all__ = ('Line', 'PlainLine', 'SpecLine', 'ResultLine', 'FatalLine')

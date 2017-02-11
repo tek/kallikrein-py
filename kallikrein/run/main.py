@@ -7,7 +7,8 @@ from amino.regex import Regex
 from amino.logging import amino_root_logger
 from amino.task import TaskException
 
-from kallikrein.run.line import Line, SpecLine, PlainLine, ResultLine
+from kallikrein.run.line import (Line, SpecLine, PlainLine, ResultLine,
+                                 FatalLine)
 from kallikrein.run.data import SpecLocation, SpecResult, SpecsResult
 from kallikrein.run.lookup_loc import lookup_loc
 from kallikrein.expectation import (Expectation, unsafe_expectation_result,
@@ -35,17 +36,22 @@ class SpecRunner:
     def spec_cls(self) -> type:
         return self.location.cls
 
+    def _run_line(self, line: Line) -> Task[Line]:
+        return (
+            Task.now(line)
+            if isinstance(line, PlainLine) else
+            self.run_spec(line)
+            if isinstance(line, SpecLine) else
+            Task.failed('invalid line in spec: {}'.format(line))
+        )
+
     @property
     def run(self) -> Task[List[Line]]:
-        def run(line: Line) -> Task[Line]:
-            return (
-                Task.now(line)
-                if isinstance(line, PlainLine) else
-                self.run_spec(line)
-                if isinstance(line, SpecLine) else
-                Task.failed('invalid line in spec: {}'.format(line))
-            )
-        return self.valid_lines.traverse(run, Task)
+        return self.valid_lines.traverse(self._run_line, Task)
+
+    @property
+    def run_lazy(self) -> List[Task[Line]]:
+        return self.valid_lines / self._run_line
 
     @property
     def unsafe(self) -> bool:
@@ -143,6 +149,11 @@ def run_specs(runners: List[SpecRunner]) -> Task[SpecsResult]:
     return runners.traverse(run_spec_class, Task) / SpecsResult
 
 
+def run_specs_lazy(runners: List[SpecRunner]
+                   ) -> List[List[Task[Line]]]:
+    return runners.map(_.run_lazy)
+
+
 def runners(specs: List[str]) -> Either[str, List[SpecRunner]]:
     return (
         collect_specs(specs) //
@@ -154,11 +165,38 @@ def specs_run_task(specs: List[str]) -> Task[SpecsResult]:
     return runners(specs).task() // run_specs
 
 
+def specs_run_task_lazy(specs: List[str]
+                        ) -> Either[str, List[List[Task[Line]]]]:
+    return runners(specs) / run_specs_lazy
+
+
+def convert_lazy_result(result: List[List[Line]], log: bool=False
+                        ) -> SpecsResult:
+    def convert_spec(spec: Task[ExpectationResult]) -> Line:
+        line = spec.attempt.right_or_map(FatalLine)
+        if log:
+            line.print_report()
+        return line
+    def convert_loc(loc: List[Task[ExpectationResult]]) -> SpecsResult:
+        return SpecResult(loc / convert_spec)
+    return SpecsResult(result / convert_loc)
+
+
+def run_error(e: Any) -> None:
+    msg = e.cause if isinstance(e, TaskException) else e
+    amino_root_logger.error('error in spec run:')
+    amino_root_logger.error(huestr(str(msg)).red.bold.colorized)
+
+
 def kallikrein_run(specs: List[str]) -> Either[Exception, SpecsResult]:
-    def error(e: Any) -> None:
-        msg = e.cause if isinstance(e, TaskException) else e
-        amino_root_logger.error('error in spec run:')
-        amino_root_logger.error(huestr(str(msg)).red.bold.colorized)
-    return (specs_run_task(specs) % __.print_report()).attempt.leffect(error)
+    return (
+        (specs_run_task(specs) % __.print_report())
+        .attempt
+        .leffect(run_error)
+    )
+
+
+def kallikrein_run_lazy(specs: List[str]) -> Either[Exception, SpecsResult]:
+    return specs_run_task_lazy(specs) / L(convert_lazy_result)(_, True)
 
 __all__ = ('kallikrein_run',)
