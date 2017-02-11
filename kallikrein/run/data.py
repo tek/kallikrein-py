@@ -1,6 +1,11 @@
+import inspect
+from typing import Any
+from types import FunctionType
+
 from amino import Maybe, Either, L, _, Right, Empty, List, Boolean, Path
 from amino.list import Lists
 from amino.logging import Logging
+from amino.util.string import snake_case
 
 from kallikrein.expectation import ExpectationResult
 
@@ -67,6 +72,13 @@ class LineSelector(Selector):
         self.lnum = lnum
 
 
+def convert_underscores(data: str) -> str:
+    return data.replace('_', ' ')
+
+
+invalid_spec_names = List('setup', 'teardown')
+
+
 class SpecLocation:
     no_docstring_msg = 'spec class `{}` has no docstring'
 
@@ -113,14 +125,38 @@ class SpecLocation:
                                            self.allow_empty)
 
     @property
+    def use_all_specs(self) -> Boolean:
+        return Boolean(hasattr(self.cls, '__all_specs__'))
+
+    @property
+    def need_no_doc(self) -> Boolean:
+        return self.selector.specific | self.use_all_specs
+
+    @property
+    def cls_methods(self) -> List[str]:
+        def filt(member: Any) -> bool:
+            return (
+                isinstance(member, FunctionType) and
+                not member.__name__.startswith('_') and
+                member.__name__ not in invalid_spec_names
+            )
+        valid = inspect.getmembers(self.cls, predicate=filt)
+        return Lists.wrap(valid) / Lists.wrap // _.head
+
+    @property
     def fallback_doc(self) -> Maybe[str]:
-        return self.meth // self.selector.specific.m
+        meth = lambda name: '{} ${}'.format(convert_underscores(name), name)
+        def doc() -> List[str]:
+            meths = (self.meth / meth / List) | (self.cls_methods / meth)
+            cls = convert_underscores(snake_case(self.cls.__name__))
+            return meths.cons(cls).join_lines
+        return self.need_no_doc.m(doc)
 
     @property
     def doc(self) -> Either[str, str]:
         return (
             Maybe(self.cls.__doc__)
-            .o(self.fallback_doc)
+            .o(lambda: self.fallback_doc)
             .to_either(SpecLocation.no_docstring_msg.format(self.cls.__name__))
         )
 

@@ -16,6 +16,7 @@ from unit._fixtures.run.simple import (Simple, target_report, EmptySpec,
 from unit._fixtures.run.unsafe import target_report_unsafe
 from unit._fixtures.run.exception import target_report_exception
 from unit._fixtures.run.pending import PendingSpec
+from unit._fixtures.run.all_specs import AllSpecsSpec
 
 
 def _spec_path(cls: type) -> str:
@@ -191,6 +192,12 @@ class RunSpec(Spec):
         active = value // __.lift(2) / _.result
         assert active.present
         assert isinstance(active.x, SingleExpectationResult)
+
+    def all_specs(self) -> None:
+        task = specs_run_task(List(_spec_path(AllSpecsSpec)))
+        result = task.attempt
+        assert result.present
+        assert len(result.value.report_lines) == 3
 
 
 __all__ = ('RunSpec',)

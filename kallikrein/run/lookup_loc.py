@@ -70,7 +70,7 @@ def lookup_file_select(fpath: Path, mod: str, select: str
     def create(cls: str) -> Either[str, SpecLocation]:
         selector = (
             meth /
-            L(FileMethodSelector)(fpath, cls, meth) |
+            L(FileMethodSelector)(fpath, cls, _) |
             FileClassSelector(fpath, cls)
         )
         return SpecLocation.create(mod, cls, meth, selector)
