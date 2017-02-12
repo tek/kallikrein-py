@@ -1,5 +1,6 @@
 from types import ModuleType
 import pkgutil
+from pkgutil import ModuleInfo  # type: ignore
 
 from amino.regex import Regex, Match
 from amino import Path, Either, List, _, Just, Empty, L, Left, __
@@ -117,13 +118,17 @@ def lookup_module(mod: ModuleType) -> List[SpecLocation]:
     return names // L(SpecLocation.create)(mod.__name__, _, Empty(), selector)
 
 
+def exclude_module(mod: ModuleInfo) -> bool:
+    return mod.ispkg or '._' in mod.name
+
+
 def lookup_package(mod: ModuleType) -> List[SpecLocation]:
     name = mod.__name__
     path = mod.__path__  # type: ignore
     return (
         List.wrap(pkgutil.walk_packages(path, prefix='{}.'.format(name)))
-        .filter_not(_.ispkg)
-        .map(_.name) //
+        .filter_not(exclude_module) /
+        _.name //
         Either.import_module //
         lookup_path
     )

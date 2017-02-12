@@ -41,7 +41,7 @@ class ASpec:
         return k(List('abc', 'abc', 'ac')).must(forall(contain('b')))
 ```
 
-There is no magic involved, the strings from the docstring are simply used with
+There is no magic involved, the names in the docstring are simply used with
 `getattr`.
 
 The expectations aren't evaluated in-place, but after having been returned to
