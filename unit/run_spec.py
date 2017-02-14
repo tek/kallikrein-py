@@ -13,6 +13,7 @@ from kallikrein.expectation import (MultiExpectationResult,
                                     SingleExpectationResult)
 from kallikrein.run.data import SpecLocation
 from kallikrein.match_result import MatchResult
+from kallikrein.util.string import green_check
 
 from unit._fixtures.run.simple import (Simple, target_report, EmptySpec,
                                        target_report_method)
@@ -217,5 +218,12 @@ class RunSpec(Spec):
         spec_result = convert_lazy_result(results, False)
         assert spec_result.report == target_report
 
+    def stats(self) -> None:
+        task = specs_run_task(List(_file_path('simple')))
+        e = task.attempt
+        assert e.present
+        result = e.value
+        assert len(result.stats_lines) == 1
+        assert '{} 2'.format(green_check) in result.stats_lines[0]
 
 __all__ = ('RunSpec',)

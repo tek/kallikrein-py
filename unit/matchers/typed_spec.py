@@ -7,7 +7,7 @@ from amino.test import Spec
 
 class TypedSpec(Spec):
 
-    def test(self) -> None:
+    def list(self) -> None:
         exp = k(List(2)).must(have_type(List))
         assert exp.evaluate.attempt.value.success
         exp = k(Just(2)).must(have_type(List))

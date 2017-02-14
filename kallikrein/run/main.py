@@ -1,4 +1,5 @@
 from typing import Any, Callable
+from datetime import datetime
 
 from hues import huestr
 
@@ -82,11 +83,14 @@ class SpecRunner:
                     inst.teardown()
             if hasattr(inst, 'setup'):
                 inst.setup()
+            start = datetime.now()
+            def result(r: ExpectationResult) -> ResultLine:
+                return ResultLine(line.text, inst, r, datetime.now() - start)
             return (
                 Task.delay(execute, line.spec, inst) //
                 evaluate %
                 teardown /
-                L(ResultLine)(line.text, inst, _)
+                result
             )
         return Task.delay(self.spec_cls) // run
 
@@ -179,7 +183,10 @@ def convert_lazy_result(result: List[List[Line]], log: bool=False
         return line
     def convert_loc(loc: List[Task[ExpectationResult]]) -> SpecsResult:
         return SpecResult(loc / convert_spec)
-    return SpecsResult(result / convert_loc)
+    result = SpecsResult(result / convert_loc)
+    if log:
+        result.print_stats()
+    return result
 
 
 def run_error(e: Any) -> None:

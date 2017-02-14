@@ -1,7 +1,8 @@
 import abc
 from typing import Any, Callable
+from datetime import timedelta
 
-from amino import List
+from amino import List, Boolean
 from amino.task import TaskException
 from amino.list import Lists
 
@@ -51,17 +52,22 @@ class PlainLine(SimpleLine):
 
 class ResultLine(SimpleLine):
 
-    def __init__(self, text: str, spec: Any, result: ExpectationResult
-                 ) -> None:
+    def __init__(self, text: str, spec: Any, result: ExpectationResult,
+                 duration: timedelta) -> None:
         super().__init__(text)
         self.spec = spec
         self.result = result
+        self.duration = duration
+
+    @property
+    def success(self) -> Boolean:
+        return self.result.success
 
     @property
     def sign(self) -> str:
         return (
             green_check
-            if self.result.success else
+            if self.success else
             yellow_clock
             if isinstance(self.result, PendingExpectationResult) else
             red_cross
