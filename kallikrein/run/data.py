@@ -229,6 +229,10 @@ class SpecsResult(Logging):
         return self.results.length - self.success_count
 
     @property
+    def success(self) -> bool:
+        return self.failure_count == 0
+
+    @property
     def stats(self) -> str:
         return '{} specs in {}:  {} {}  {} {}'.format(
             self.results.length,
