@@ -14,7 +14,7 @@ setup(
     packages=find_packages(exclude=['unit', 'unit.*']),
     install_requires=[
         'amino>=9.3.0',
-        'golgi',
+        'golgi>=1.5.0',
         'hues',
     ],
     entry_points={
