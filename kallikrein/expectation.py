@@ -4,11 +4,9 @@ import traceback
 import functools
 from typing import Generic, TypeVar, Callable, Any
 
-from amino import Boolean, Task, L, _, List, __, Map
+from amino import Boolean, Task, L, _, List, __
 from amino.boolean import false, true
 from amino.tc.monoid import Monoid
-from amino.tc.base import AutoImplicitInstances
-from amino.lazy import lazy
 
 from kallikrein.matcher import Matcher
 from kallikrein.match_result import MatchResult, SuccessMatchResult
@@ -256,19 +254,7 @@ class EmptyExpectation(AlgExpectation):
         return other
 
 
-class AlgExpectationInstances(AutoImplicitInstances):
-    tpe = AlgExpectation
-
-    @lazy
-    def _instances(self) -> Map:
-        return Map(
-            {
-                Monoid: AlgExpectationMonoid(),
-            }
-        )
-
-
-class AlgExpectationMonoid(Monoid):
+class AlgExpectationMonoid(Monoid, tpe=AlgExpectation):
 
     @property
     def empty(self) -> AlgExpectation:
