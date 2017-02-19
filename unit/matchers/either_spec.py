@@ -10,12 +10,13 @@ from kallikrein.matchers import contain
 
 class EitherSpec(Spec):
 
-    def _run(self, exp: Expectation, success: bool) -> MatchResult:
+    def _run(self, exp: Expectation, success: bool, count: int = 1
+             ) -> MatchResult:
         expectation = exp.evaluate.attempt
         assert expectation.is_right
         result = expectation.value
         assert result.success == success
-        assert len(result.report_lines) == 1
+        assert len(result.report_lines) == count
         return result
 
     def success_right(self) -> None:
@@ -31,29 +32,19 @@ class EitherSpec(Spec):
         assert 'not' in result.report
 
     def value_success(self) -> None:
-        result = self._run(k(Right(1)).must(be_right(1)), True)
+        result = self._run(k(Right(1)).must(be_right(1)), True, 2)
         assert 'not' not in result.report
 
     def value_failure(self) -> None:
-        result = self._run(k(Right(1)).must(be_right(2)), False)
-        assert 'not' not in result.report
-        assert 'but' in result.report
+        self._run(k(Right(1)).must(be_right(2)), False)
 
     def value_and_type_failure(self) -> None:
-        result = self._run(k(Left(1)).must(be_right(2)), False)
-        assert 'not' in result.report
-        assert 'and' in result.report
+        self._run(k(Left(1)).must(be_right(2)), False, 2)
 
     def nested_success(self) -> None:
-        result = self._run(k(Right(List(1, 2))).must(be_right(contain(2))),
-                           True)
-        assert 'not' not in result.report
-        assert 'and' in result.report
+        self._run(k(Right(List(1, 2))).must(be_right(contain(2))), True, 2)
 
     def nested_failure(self) -> None:
-        result = self._run(k(Right(List(1, 3))).must(be_right(contain(2))),
-                           False)
-        assert 'not right' not in result.report
-        assert 'but' in result.report
+        self._run(k(Right(List(1, 3))).must(be_right(contain(2))), False)
 
 __all__ = ('EitherSpec',)

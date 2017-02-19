@@ -12,6 +12,10 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
+class Contain:
+    pass
+
+
 class PredContain(Predicate):
     pass
 
@@ -32,7 +36,8 @@ class PredContainCollection(PredContain, pred=is_container):
 
 class NestContainCollection(NestContain, pred=is_collection):
 
-    def match(self, exp: Collection[A], target: BoundMatcher) -> List[MatchResult[B]]:
+    def match(self, exp: Collection[A], target: BoundMatcher
+              ) -> List[MatchResult[B]]:
         return List.wrap([target.evaluate(e) for e in exp])
 
     def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]
@@ -42,6 +47,6 @@ class NestContainCollection(NestContain, pred=is_collection):
 
 success = '`{}` contains `{}`'
 failure = '`{}` does not contain `{}`'
-contain = matcher('contain', success, failure, PredContain, NestContain)
+contain = matcher(Contain, success, failure, PredContain, NestContain)
 
 __all__ = ('contain',)

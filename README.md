@@ -52,6 +52,11 @@ k(3).must(equal(3)) & k(4).must(greater_equal(2)) | k(List(2)).must(contain(2))
 ```
 associativity via parentheses is not yet implemented.
 
+THe same applies for matchers:
+```python
+k(3).must(equal(3) & greater_equal(2))
+```
+
 If a spec class has `setup` and `teardown` methods, they are called once before
 and after each individual spec.
 
@@ -142,6 +147,12 @@ class NestContainCollection(NestContain, pred=is_collection):
 success = '`{}` contains `{}`'
 failure = '`{}` does not contain `{}`'
 contain = matcher('contain', success, failure, PredContain, NestContain)
+
+
+class PredContainMaybe(PredContain, tpe=Maybe):
+
+    def check(self, exp: Maybe[A], target: A) -> Boolean:
+        return Boolean(exp.contains(target))
 ```
 The `PredContain` and `NestContain` classes are used to link instances for
 specific types to the contain matcher.
@@ -155,6 +166,9 @@ can be handled by them, in this case, if they are virtual subclasses of
 The simple way would be to pass `tpe=list` to the metaclass constructor instead
 of `pred=is_container`, but that would not allow any other iterable type to be
 matched.
+The instance `PredContainMaybe` demonstrates the use of the `tpe` variant and
+shows that additional instances for arbitrary types can be added without having
+to change the internal logic of **kallikrein**.
 
 The internal part of `TCMatcher` constructs a `SimpleMatchResult` from the
 result of `Predicate.check`, indicating success of the match, and the two

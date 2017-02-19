@@ -1,59 +1,30 @@
-import abc
-from typing import Any, TypeVar
+from typing import Union, TypeVar
 
-from kallikrein.matcher import BoundMatcher, Matcher
-from kallikrein.match_result import MatchResult, NestedMatchResult
-from kallikrein.matchers import equal
+from kallikrein.matchers.typed import have_type, ChainTyped
+from kallikrein.matchers import contain
+from kallikrein.matcher import StrictMatcher, BoundMatcher
+from kallikrein.matchers.contain import PredContain
 
-from amino import Either, List
+from amino import Right, Left, Either, Boolean
 
 A = TypeVar('A')
+B = TypeVar('B')
 
 
-def either_name(right: bool) -> str:
-    return 'right' if right else 'left'
+class ChainTypedEither(ChainTyped, tpe=Either):
+
+    def chain(self, matcher: StrictMatcher, other: Union[A, BoundMatcher]
+              ) -> BoundMatcher:
+        return matcher & contain(other)
 
 
-class EitherMatcher(Matcher[Either]):
-    type_message = '`{}` is {}{}'
+class PredContainEither(PredContain, tpe=Either):
 
-    @abc.abstractproperty
-    def right_expected(self) -> bool:
-        ...
-
-    def format(self, success: bool, exp: Either, target: Any) -> str:
-        actual = either_name(self.right_expected)
-        no = '' if success else 'not '
-        return EitherMatcher.type_message.format(exp, no, actual)
-
-    def _match_type(self, exp: Either) -> bool:
-        return isinstance(exp, Either) and exp.is_right == self.right_expected
-
-    def match(self, exp: Either, target: Any) -> MatchResult:
-        return self.match_nested(exp, equal(target))
-
-    def match_nested(self, exp: Either, target: BoundMatcher) -> MatchResult:
-        type_result = self._match_type(exp)
-        msg = self.format(type_result, exp, target)
-        nested = target.evaluate(exp.value)
-        return NestedMatchResult(exp, type_result, msg, List(nested))
+    def check(self, exp: Either[A, B], target: Union[A, B]) -> Boolean:
+        return Boolean(exp.value == target)
 
 
-class RightMatcher(EitherMatcher):
+be_right = have_type(Right)
+be_left = have_type(Left)
 
-    @property
-    def right_expected(self) -> bool:
-        return True
-
-
-class LeftMatcher(EitherMatcher):
-
-    @property
-    def right_expected(self) -> bool:
-        return False
-
-
-be_right = RightMatcher()
-be_left = LeftMatcher()
-
-__all__ = ('EitherMatcher',)
+__all__ = ('be_right', 'be_left')
