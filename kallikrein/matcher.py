@@ -2,9 +2,10 @@ import abc
 from typing import Generic, TypeVar, Union, Callable, Type
 
 from kallikrein.match_result import (MatchResult, SimpleMatchResult,
-                                     BadNestedMatch)
+                                     BadNestedMatch, MatchResultAnd,
+                                     MatchResultOr, MatchResultAlg)
 
-from amino import Boolean, Maybe, List, _, __
+from amino import Boolean, Maybe, List, __
 from amino.tc.base import TypeClass
 
 A = TypeVar('A')
@@ -21,38 +22,6 @@ class MatcherAlg:
     @abc.abstractmethod
     def __or__(self, other: 'MatcherAlg') -> 'MatcherAlg':
         ...
-
-
-class MatchResultAlg(MatchResult[List[A]], Generic[A]):
-
-    def __init__(self, sub: List[MatchResult]) -> None:
-        self.sub = sub
-
-    @property
-    def failures(self) -> List[MatchResult]:
-        return self.sub.filter(_.failure)
-
-    @property
-    def message(self) -> List[str]:
-        return (
-            self.sub // _.message
-            if self.success else
-            self.failures // _.message
-        )
-
-
-class MatchResultAnd(MatchResultAlg):
-
-    @property
-    def success(self) -> Boolean:
-        return self.sub.forall(_.success)
-
-
-class MatchResultOr(MatchResultAlg):
-
-    @property
-    def success(self) -> Boolean:
-        return self.sub.exists(_.success)
 
 
 class BoundMatcher(Generic[A], MatcherAlg):

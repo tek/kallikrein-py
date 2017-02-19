@@ -12,7 +12,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 
 
-class MatchResult(Generic[A], abc.ABC):
+class MatchResult(Generic[A]):
 
     @abc.abstractproperty
     def success(self) -> Boolean:
@@ -215,6 +215,38 @@ class FailureMatchResult(MatchResult):
     @property
     def message(self) -> List[str]:
         return List('failure')
+
+
+class MatchResultAlg(MatchResult[List[A]], Generic[A]):
+
+    def __init__(self, sub: List[MatchResult]) -> None:
+        self.sub = sub
+
+    @property
+    def failures(self) -> List[MatchResult]:
+        return self.sub.filter(_.failure)
+
+    @property
+    def message(self) -> List[str]:
+        return (
+            self.sub // _.message
+            if self.success else
+            self.failures // _.message
+        )
+
+
+class MatchResultAnd(MatchResultAlg):
+
+    @property
+    def success(self) -> Boolean:
+        return self.sub.forall(_.success)
+
+
+class MatchResultOr(MatchResultAlg):
+
+    @property
+    def success(self) -> Boolean:
+        return self.sub.exists(_.success)
 
 
 __all__ = ('MatchResult', 'SimpleMatchResult', 'MultiLineMatchResult',
