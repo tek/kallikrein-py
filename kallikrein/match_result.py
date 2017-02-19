@@ -156,7 +156,7 @@ class MultiMatchResult(NestedMatchResultBase):
 
     @property
     def failure_message(self) -> str:
-        return 'complex match failed for:'
+        return 'multi match failed for:'
 
 
 class ExistsMatchResult(MultiMatchResult):

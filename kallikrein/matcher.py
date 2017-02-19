@@ -4,7 +4,7 @@ from typing import Generic, TypeVar, Union, Callable, Type
 from kallikrein.match_result import (MatchResult, SimpleMatchResult,
                                      BadNestedMatch)
 
-from amino import Boolean, Maybe
+from amino import Boolean, Maybe, List, _, __
 from amino.tc.base import TypeClass
 
 A = TypeVar('A')
@@ -12,7 +12,63 @@ B = TypeVar('B')
 C = TypeVar('C')
 
 
-class BoundMatcher(Generic[A, B]):
+class MatcherAlg:
+
+    @abc.abstractmethod
+    def __and__(self, other: 'MatcherAlg') -> 'MatcherAlg':
+        ...
+
+    @abc.abstractmethod
+    def __or__(self, other: 'MatcherAlg') -> 'MatcherAlg':
+        ...
+
+
+class MatchResultAlg(MatchResult[List[A]], Generic[A]):
+
+    def __init__(self, sub: List[MatchResult]) -> None:
+        self.sub = sub
+
+    @property
+    def failures(self) -> List[MatchResult]:
+        return self.sub.filter(_.failure)
+
+    @property
+    def message(self) -> List[str]:
+        return (
+            self.sub // _.message
+            if self.success else
+            self.failures // _.message
+        )
+
+
+class MatchResultAnd(MatchResultAlg):
+
+    @property
+    def success(self) -> Boolean:
+        return self.sub.forall(_.success)
+
+
+class MatchResultOr(MatchResultAlg):
+
+    @property
+    def success(self) -> Boolean:
+        return self.sub.exists(_.success)
+
+
+class BoundMatcher(Generic[A], MatcherAlg):
+
+    @abc.abstractmethod
+    def evaluate(self, exp: A) -> MatchResult[A]:
+        ...
+
+    def __and__(self, other: MatcherAlg) -> MatcherAlg:
+        return BoundMatcherAlg(List(self, other), MatchResultAnd)
+
+    def __or__(self, other: MatcherAlg) -> MatcherAlg:
+        return BoundMatcherAlg(List(self, other), MatchResultOr)
+
+
+class SimpleBoundMatcher(BoundMatcher[A], Generic[A, B]):
 
     def __init__(self, matcher: Callable[[A, B], MatchResult], target: B
                  ) -> None:
@@ -27,18 +83,30 @@ class BoundMatcher(Generic[A, B]):
         return self.matcher(exp, self.target)
 
 
-class StrictMatcher(BoundMatcher[A, A], Generic[A]):
+class StrictMatcher(SimpleBoundMatcher[A, A], Generic[A]):
     pass
 
 
-class NestedMatcher(BoundMatcher[A, BoundMatcher], Generic[A]):
+class NestedMatcher(SimpleBoundMatcher[A, SimpleBoundMatcher], Generic[A]):
     pass
+
+
+class BoundMatcherAlg(BoundMatcher[A], Generic[A, B]):
+
+    def __init__(self, sub: List[SimpleBoundMatcher[A, B]],
+                 result_ctor: Type[MatchResultAlg]) -> None:
+        self.sub = sub
+        self.result_ctor = result_ctor
+
+    def evaluate(self, exp: A) -> MatchResult[A]:
+        return self.result_ctor(self.sub.map(__.evaluate(exp)))
 
 
 class Matcher(Generic[A]):
 
-    def __call__(self, target: Union[A, BoundMatcher]) -> BoundMatcher:
-        if isinstance(target, BoundMatcher):
+    def __call__(self, target: Union[A, SimpleBoundMatcher]
+                 ) -> SimpleBoundMatcher:
+        if isinstance(target, SimpleBoundMatcher):
             return NestedMatcher(self.match_nested, target)
         else:
             return StrictMatcher(self.match, target)
@@ -48,7 +116,8 @@ class Matcher(Generic[A]):
         ...
 
     @abc.abstractmethod
-    def match_nested(self, exp: A, target: BoundMatcher) -> MatchResult[A]:
+    def match_nested(self, exp: A, target: SimpleBoundMatcher
+                     ) -> MatchResult[A]:
         ...
 
 
@@ -62,7 +131,7 @@ class Predicate(TypeClass):
 class Nesting(TypeClass):
 
     @abc.abstractmethod
-    def match(self, exp: A, target: BoundMatcher) -> C:
+    def match(self, exp: A, target: SimpleBoundMatcher) -> C:
         ...
 
     @abc.abstractmethod
@@ -72,7 +141,7 @@ class Nesting(TypeClass):
 
 class NestingUnavailable(Nesting):
 
-    def match(self, exp: A, target: BoundMatcher) -> C:
+    def match(self, exp: A, target: SimpleBoundMatcher) -> C:
         return BadNestedMatch(self.tpe)
 
     def wrap(self, name: str, exp: A, nested: C) -> MatchResult:
@@ -115,7 +184,7 @@ class TCMatcher(Matcher[A]):
 
     def check_pred(self, exp: A, target: B) -> Boolean:
         return (
-            self.pred_fatal(exp, target)
+            self.pred_fatal(exp, target)  # type: ignore
             .check(exp, target)
         )
 
@@ -130,7 +199,8 @@ class TCMatcher(Matcher[A]):
         message = self.format(success, exp, target)
         return SimpleMatchResult(success, message)
 
-    def match_nested(self, exp: A, target: BoundMatcher) -> MatchResult[A]:
+    def match_nested(self, exp: A, target: SimpleBoundMatcher
+                     ) -> MatchResult[A]:
         nest = self.nest(exp)
         nested = nest.match(exp, target)
         return nest.wrap(self.name, exp, nested)
@@ -161,4 +231,4 @@ class SimpleTCMatcher(TCMatcher):
 matcher = SimpleTCMatcher
 
 __all__ = ('Matcher', 'BoundMatcher', 'Predicate', 'Nesting', 'NoInstance',
-           'TCMatcher', 'SimpleTCMatcher')
+           'TCMatcher', 'SimpleTCMatcher', 'BoundMatcher')
