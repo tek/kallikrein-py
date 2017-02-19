@@ -1,36 +1,43 @@
 from typing import Sized
 
-from kallikrein.match_result import MatchResult, SimpleMatchResult
+from kallikrein.match_result import MatchResult
 
-from amino import Boolean
-from amino.boolean import false
-from kallikrein.matcher import Matcher, BoundMatcher
+from amino import Boolean, _, L
+from kallikrein.matcher import BoundMatcher, matcher, Predicate, Nesting
 
 
-class Length(Matcher[Sized]):
+class Length:
+    pass
 
-    def _check(self, exp: Sized, target: int) -> MatchResult[Sized]:
-        actual = len(exp)
-        result = Boolean(actual == target)
-        no = '' if result else '{}, not '.format(actual)
-        message = 'length of {} is {}{}'.format(exp, no, target)
-        return SimpleMatchResult(result, message)
 
-    def match(self, exp: Sized, target: int) -> MatchResult[Sized]:
-        return (
-            self._check(exp, target)
-            if hasattr(exp, '__len__') else
-            SimpleMatchResult(false, '`{}` has no length'.format(exp))
-        )
+class PredLength(Predicate):
+    pass
 
-    def match_nested(self, exp: Sized, target: BoundMatcher) -> MatchResult[Sized]:
-        return (
-            target.evaluate(len(exp))
-            if hasattr(exp, '__len__') else
-            SimpleMatchResult(false, '`{}` has no length'.format(exp))
-        )
 
-length = Length()
-have_length = length
+class NestLength(Nesting):
+    pass
 
-__all__ = ('Length', 'length', 'have_length')
+
+is_sized = L(issubclass)(_, Sized)
+
+
+class PredLengthSized(PredLength, pred=is_sized):
+
+    def check(self, exp: Sized, target: int) -> Boolean:
+        return Boolean(len(exp) == target)
+
+
+class NestLengthSized(NestLength, pred=is_sized):
+
+    def match(self, exp: Sized, target: BoundMatcher) -> MatchResult:
+        return target.evaluate(len(exp))
+
+    def wrap(self, name: str, exp: Sized, nested: MatchResult) -> MatchResult:
+        return nested
+
+
+success = '`{}` has length of `{}`'
+failure = '`{}` doesn not have length of `{}`'
+have_length = matcher(Length, success, failure, PredLength, NestLength)
+
+__all__ = ('have_length',)

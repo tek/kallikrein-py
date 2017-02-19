@@ -25,8 +25,8 @@ class LengthSpec(Spec):
         self._run(k(List(3, 4)).must(have_length(3)), False)
 
     def wrong_type(self) -> None:
-        result = self._run(k(3).must(have_length(3)), False)
-        assert 'has no length' in result.report
+        result = k(3).must(have_length(3)).evaluate.attempt
+        assert result.is_left
 
     def success_nested(self) -> None:
         self._run(k(List(2, 3, 4)).must(have_length(greater_equal(2))), True)
