@@ -8,7 +8,7 @@ from amino import Boolean, Task, L, _, List, __
 from amino.boolean import false, true
 from amino.tc.monoid import Monoid
 
-from kallikrein.matcher import Matcher
+from kallikrein.matcher import BoundMatcher
 from kallikrein.match_result import MatchResult, SuccessMatchResult
 from kallikrein.util.string import indent, red
 
@@ -188,17 +188,17 @@ class AlgExpectation(Expectation):
 
 class SingleExpectation(AlgExpectation):
 
-    def __init__(self, matcher: Matcher[A], value: A) -> None:
-        self.matcher = matcher
+    def __init__(self, match: BoundMatcher, value: A) -> None:
+        self.match = match
         self.value = value
 
     @property
     def evaluate(self) -> Task[ExpectationResult]:
-        return (Task.delay(self.matcher.evaluate, self.value) /
+        return (Task.delay(self.match.evaluate, self.value) /
                 L(SingleExpectationResult)(self, _))
 
     def __str__(self) -> str:
-        return '{}({}, {})'.format(self.__class__.__name__, self.matcher,
+        return '{}({}, {})'.format(self.__class__.__name__, self.match,
                                    self.value)
 
     def __and__(self, other: AlgExpectation) -> AlgExpectation:

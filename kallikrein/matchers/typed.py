@@ -1,39 +1,25 @@
-from typing import Generic, TypeVar, Union
+from typing import TypeVar
 
-from kallikrein.matcher import Matcher, matcher
+from kallikrein.matcher import Predicate, matcher, NestingUnavailable
 
-from amino import List, L, _
-from kallikrein.match_result import (MatchResult, SimpleMatchResult,
-                                     ForAllMatchResult)
-from kallikrein.matchers.any import AnyMatcher
+from amino import Boolean
 
 A = TypeVar('A')
 
 
-class TypedMatcher(Generic[A], Matcher[A]):
-    success = '`{}` is a `{}`'
-    failure = '`{}` is not a `{}`'
-
-    def __init__(self, tpe: type, target: Union[A, Matcher]) -> None:
-        super().__init__(target)
-        self.tpe = tpe
-
-    def match(self, exp: A, target: A) -> MatchResult[A]:
-        result = isinstance(exp, self.tpe)
-        templ = TypedMatcher.success if result else TypedMatcher.failure
-        message = templ.format(exp, self.tpe)
-        return SimpleMatchResult(result, message)
-
-    def match_nested(self, exp: A, target: Matcher) -> MatchResult[A]:
-        return ForAllMatchResult(
-            'typed', exp, List(self.match(exp, exp), target.evaluate(exp)))
+class PredTyped(Predicate):
+    pass
 
 
-def typed(tpe: type, nested: Matcher) -> Matcher:
-    return matcher(L(TypedMatcher)(tpe, _))(nested)
+class PredTypedAny(PredTyped, pred=lambda a: True):
+
+    def check(self, exp: A, tpe: type) -> Boolean:
+        return Boolean(isinstance(exp, tpe))
 
 
-def have_type(tpe: type) -> Matcher:
-    return typed(tpe, AnyMatcher())
+success = '`{}` is a `{}`'
+failure = '`{}` is not a `{}`'
+typed = matcher('typed', success, failure, PredTyped, NestingUnavailable)
+have_type = typed
 
-__all__ = ('TypedMatcher', 'typed', 'have_type')
+__all__ = ('typed', 'have_type')

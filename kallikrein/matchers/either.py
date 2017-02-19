@@ -1,9 +1,8 @@
 import abc
-from typing import Any, Tuple, Union, TypeVar
+from typing import Any, TypeVar
 
-from kallikrein.matcher import Matcher
+from kallikrein.matcher import BoundMatcher, Matcher
 from kallikrein.match_result import MatchResult, NestedMatchResult
-from kallikrein.matchers.any import be_any
 from kallikrein.matchers import equal
 
 from amino import Either, List
@@ -22,24 +21,22 @@ class EitherMatcher(Matcher[Either]):
     def right_expected(self) -> bool:
         ...
 
-    def _match_type(self, exp: Either) -> Tuple[bool, str]:
+    def format(self, success: bool, exp: Either, target: Any) -> str:
         actual = either_name(self.right_expected)
-        success = (isinstance(exp, Either) and
-                   exp.is_right == self.right_expected)
         no = '' if success else 'not '
-        msg = EitherMatcher.type_message.format(exp, no, actual)
-        return success, msg
+        return EitherMatcher.type_message.format(exp, no, actual)
+
+    def _match_type(self, exp: Either) -> bool:
+        return isinstance(exp, Either) and exp.is_right == self.right_expected
 
     def match(self, exp: Either, target: Any) -> MatchResult:
         return self.match_nested(exp, equal(target))
 
-    def match_nested(self, exp: Either, target: Matcher) -> MatchResult:
-        type_result, msg = self._match_type(exp)
+    def match_nested(self, exp: Either, target: BoundMatcher) -> MatchResult:
+        type_result = self._match_type(exp)
+        msg = self.format(type_result, exp, target)
         nested = target.evaluate(exp.value)
         return NestedMatchResult(exp, type_result, msg, List(nested))
-
-    def __call__(self, target: Union[A, Matcher[A]]) -> 'EitherMatcher':
-        return type(self)(target)  # type: ignore
 
 
 class RightMatcher(EitherMatcher):
@@ -56,7 +53,7 @@ class LeftMatcher(EitherMatcher):
         return False
 
 
-be_right = RightMatcher(be_any)
-be_left = LeftMatcher(be_any)
+be_right = RightMatcher()
+be_left = LeftMatcher()
 
 __all__ = ('EitherMatcher',)

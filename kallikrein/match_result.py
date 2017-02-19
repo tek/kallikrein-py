@@ -4,6 +4,7 @@ from typing import Generic, TypeVar, Any
 from hues import huestr
 
 from amino import Boolean, List, _
+from amino.boolean import false
 
 from kallikrein.util.string import indent
 
@@ -106,6 +107,8 @@ class NestedMatchResultBase(MatchResult):
                 msgs / huestr / _.yellow.colorized)
 
 
+# TODO allow empty nested list, in which case omit from message
+# use this instead of passing `SuccessMatchResult`
 class NestedMatchResult(NestedMatchResultBase):
 
     def __init__(self, exp: A, main_success: bool, main_msg: str,
@@ -185,7 +188,7 @@ class BadNestedMatch(MatchResult[Any]):
 
     @property
     def success(self) -> Boolean:
-        return Boolean(True)
+        return false
 
     @property
     def message(self) -> List[str]:

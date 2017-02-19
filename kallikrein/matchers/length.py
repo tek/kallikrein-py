@@ -4,7 +4,7 @@ from kallikrein.match_result import MatchResult, SimpleMatchResult
 
 from amino import Boolean
 from amino.boolean import false
-from kallikrein.matcher import Matcher, matcher
+from kallikrein.matcher import Matcher, BoundMatcher
 
 
 class Length(Matcher[Sized]):
@@ -23,14 +23,14 @@ class Length(Matcher[Sized]):
             SimpleMatchResult(false, '`{}` has no length'.format(exp))
         )
 
-    def match_nested(self, exp: Sized, target: Matcher) -> MatchResult[Sized]:
+    def match_nested(self, exp: Sized, target: BoundMatcher) -> MatchResult[Sized]:
         return (
             target.evaluate(len(exp))
             if hasattr(exp, '__len__') else
             SimpleMatchResult(false, '`{}` has no length'.format(exp))
         )
 
-length = matcher(Length)
+length = Length()
 have_length = length
 
 __all__ = ('Length', 'length', 'have_length')

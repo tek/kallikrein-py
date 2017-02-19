@@ -1,32 +1,47 @@
-from typing import Generic, TypeVar
+from typing import TypeVar
 from typing import Collection  # type: ignore
+from collections.abc import Container, Iterable
 
-from kallikrein.match_result import (MatchResult, SimpleMatchResult,
+from amino import Boolean, List, L, _
+
+from kallikrein.matcher import Predicate, Nesting, matcher, BoundMatcher
+from kallikrein.match_result import (MatchResult,
                                      ExistsMatchResult)
 
-from amino import Boolean, List
-from kallikrein.matcher import Matcher, matcher
-
 A = TypeVar('A')
+B = TypeVar('B')
 
 
-class Contain(Generic[A], Matcher[Collection[A]]):
-    success = '`{}` contains `{}`'
-    failure = '`{}` does not contain `{}`'
-
-    def match(self, exp: Collection[A], target: A
-              ) -> MatchResult[Collection[A]]:
-        result = Boolean(self.target in exp)
-        templ = Contain.success if result else Contain.failure
-        message = templ.format(exp, self.target)
-        return SimpleMatchResult(result, message)
-
-    def match_nested(self, exp: Collection[A], target: Matcher
-                     ) -> MatchResult[Collection[A]]:
-        nested = List.wrap([target.evaluate(e) for e in exp])
-        return ExistsMatchResult(str(self), exp, nested)
+class PredContain(Predicate):
+    pass
 
 
-contain = matcher(Contain)
+class NestContain(Nesting):
+    pass
+
+
+is_container = L(issubclass)(_, Container)
+is_collection = L(issubclass)(_, Iterable)
+
+
+class PredContainCollection(PredContain, pred=is_container):
+
+    def check(self, exp: Collection[A], target: A) -> Boolean:
+        return Boolean(target in exp)
+
+
+class NestContainCollection(NestContain, pred=is_collection):
+
+    def match(self, exp: Collection[A], target: BoundMatcher) -> List[MatchResult[B]]:
+        return List.wrap([target.evaluate(e) for e in exp])
+
+    def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]
+             ) -> MatchResult[A]:
+        return ExistsMatchResult(name, exp, nested)
+
+
+success = '`{}` contains `{}`'
+failure = '`{}` does not contain `{}`'
+contain = matcher('contain', success, failure, PredContain, NestContain)
 
 __all__ = ('contain',)

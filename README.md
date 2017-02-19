@@ -2,8 +2,6 @@
 _kallikrein_ is a test framework inspired by [specs2], focused on functional
 purity and composability.
 
-At this time, only basic structure is implemented, more to come soon.
-
 ## Install
 ```
 pip install kallikrein
@@ -90,34 +88,83 @@ recursive search is done returning all valid specs specified in the modules'
 ```
 
 ## Extend
-`must` expects a subclass of `Matcher` for its argument which can be
-customized easily. The matcher should calculate a `MatchResult` containing
-information about the match.
+`must` expects a `Match` instance for its argument which is produced by a
+`Matcher` when called with a target value and produces a `MatchResult` when
+evaluated.
+Subclassing `Matcher` and implementing the `match` and `match_nested` methods
+is a simple way to create a custom matcher, but there is a much more flexible
+concept available.
+
+The `TCMatcher` class uses [amino]'s typeclass system to allow special
+treatment of any type by any matcher without having to reimplement the
+matchers.
+A typeclass matcher consists of two string templates for assembling the success
+and failure messages and two instances of the typeclasses `Predicate` and
+`Nesting`.
+
+Defining classes for those typeclasses for a specific type automatically
+registers them as handlers for that type in the desired matcher.
 
 This is the implementation of `contain` for reference:
 
 ```python
-class Contain(Matcher):
+from collections.abc import Container, Iterable
 
-    def match(self, exp):
-        success = '`{}` contains `{}`'.format(exp, self.target)
-        failure = '`{}` does not contain `{}`'.format(exp, self.target)
-        return SimpleMatchResult(self.target in exp, success, failure)
 
-    def match_nested(self, exp):
-        nested = exp.map(self.target)
-        return ExistsMatchResult(str(self), exp, nested)
+class PredContain(Predicate):
+    pass
 
-contain = matcher(Contain)
+
+class NestContain(Nesting):
+    pass
+
+
+is_container = L(issubclass)(_, Container)
+is_collection = L(issubclass)(_, Iterable)
+
+
+class PredContainCollection(PredContain, pred=is_container):
+
+    def check(self, exp: Collection[A], target: A) -> Boolean:
+        return Boolean(target in exp)
+
+
+class NestContainCollection(NestContain, pred=is_collection):
+
+    def match(self, exp: Collection[A], target: Match) -> List[MatchResult[B]]:
+        return List.wrap([target.evaluate(e) for e in exp])
+
+    def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]
+             ) -> MatchResult[A]:
+        return ExistsMatchResult(name, exp, nested)
+
+
+success = '`{}` contains `{}`'
+failure = '`{}` does not contain `{}`'
+contain = matcher('contain', success, failure, PredContain, NestContain)
 ```
-`SimpleMatchResult` is constructed with a boolean, indicating success, and two
-strings that describe the success and failure.
+The `PredContain` and `NestContain` classes are used to link instances for
+specific types to the contain matcher.
+The matcher checks all available instances for eligibility for the type of the
+checked expectable and calls the `check`, `match` and `wrap` methods on the
+respective instances.
 
-`ExistsMatchResult` is a little more complex; it receives the list of nested
+In this example, the instances use a predicate function to check whether a type
+can be handled by them, in this case, if they are virtual subclasses of
+`Container` or `Iterable`.
+The simple way would be to pass `tpe=list` to the metaclass constructor instead
+of `pred=is_container`, but that would not allow any other iterable type to be
+matched.
+
+The internal part of `TCMatcher` constructs a `SimpleMatchResult` from the
+result of `Predicate.check`, indicating success of the match, and the two
+strings supplied to the constructor that describe the success and failure.
+
+Because nested matches must be handled specifically to the matcher,
+the `MatchResult` must be constructed in the implementation.
+`ExistsMatchResult` is one possible variant; it receives the list of nested
 match results (one for each list element) and creates a detailed error
-message.
-
-The `target` attribute of `Matcher` contains either a nested `Matcher` or a
-strict value, like `2` for `contain(2)`.
+message, succeeding if at least one nested `MatchResult` is successful.
 
 [specs2]: https://github.com/etorreborre/specs2
+[amino]: https://github.com/tek/amino

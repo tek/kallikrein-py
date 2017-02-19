@@ -5,7 +5,7 @@ from kallikrein.match_result import (MatchResult, SimpleMatchResult,
                                      ForAllMatchResult)
 
 from amino import List
-from kallikrein.matcher import Matcher, matcher
+from kallikrein.matcher import Matcher
 
 
 A = TypeVar('A')
@@ -28,6 +28,6 @@ class ForAll(Generic[A], Matcher[Collection[A]]):
         return ForAllMatchResult(str(self), exp, nested)
 
 
-forall = matcher(ForAll)
+forall = ForAll()
 
 __all__ = ('forall',)

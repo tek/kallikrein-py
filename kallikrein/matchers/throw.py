@@ -1,6 +1,6 @@
 from typing import Callable, Any
 
-from kallikrein.matcher import Matcher, matcher
+from kallikrein.matcher import Matcher
 from kallikrein.match_result import (MatchResult, SimpleMatchResult,
                                      MultiLineMatchResult)
 from kallikrein.util.string import indent
@@ -58,6 +58,6 @@ class Throw(Matcher[Callable]):
         return MultiLineMatchResult(result, message)
 
 
-throw = matcher(Throw)
+throw = Throw()
 
 __all__ = ('throw', 'Throw')

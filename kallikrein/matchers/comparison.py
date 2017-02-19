@@ -1,11 +1,11 @@
 import abc
 import operator
-from typing import Tuple, Callable, Union
+from typing import Tuple, Callable
 from numbers import Number
 
 from kallikrein.match_result import (MatchResult, SimpleMatchResult,
                                      BadNestedMatch)
-from kallikrein.matcher import Matcher, matcher, MatcherCtor
+from kallikrein.matcher import Matcher, BoundMatcher
 from amino import Boolean, L, _
 
 
@@ -20,22 +20,20 @@ class Comparison(Matcher[Number]):
         ...
 
     def match(self, exp: Number, target: Number) -> MatchResult[Number]:
-        result = Boolean(self.operator(exp, self.target))
+        result = Boolean(self.operator(exp, target))
         op_s, op_f = self.operator_reprs
         op = op_s if result else op_f
         message = '{} {} {}'.format(exp, op, target)
         return SimpleMatchResult(result, message)
 
-    def match_nested(self, exp: Number, target: Matcher
-                     ) -> MatchResult[Number]:
+    def match_nested(self, exp: Number, target: BoundMatcher) -> MatchResult[Number]:
         return BadNestedMatch(self)
 
 
 class SimpleComparison(Comparison):
 
     def __init__(self, op: Callable[[Number, Number], bool], op_s: str,
-                 op_f: str, target: Union[Number, 'Matcher[Number]']) -> None:
-        super().__init__(target)
+                 op_f: str) -> None:
         self.op = op
         self.op_s = op_s
         self.op_f = op_f
@@ -50,8 +48,8 @@ class SimpleComparison(Comparison):
 
 
 def comparison(op: Callable[[Number, Number], bool], op_s: str, op_f: str
-               ) -> MatcherCtor:
-    return matcher(L(SimpleComparison)(op, op_s, op_f, _))
+               ) -> Matcher[Number]:
+    return SimpleComparison(op, op_s, op_f)
 
 equal = comparison(operator.eq, '==', '/=')
 eq = equal
