@@ -205,7 +205,7 @@ class SpecsResult(Logging):
         d = self.duration
         total = d.total_seconds()
         ms = int(d.microseconds / 1000)
-        s = d.seconds
+        s = d.seconds % 60
         m = int((total / 60) % 60)
         h = int(total / 3600)
         return (
