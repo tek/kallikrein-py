@@ -3,6 +3,8 @@ from datetime import datetime
 
 from hues import huestr
 
+from golgi import Config
+
 from amino import List, Either, Task, Right, curried, L, _, Maybe, __, Try
 from amino.regex import Regex
 from amino.logging import amino_root_logger
@@ -191,8 +193,11 @@ def convert_lazy_result(result: List[List[Line]], log: bool=False
 
 def run_error(e: Any) -> None:
     msg = e.cause if isinstance(e, TaskException) else e
-    amino_root_logger.error('error in spec run:')
-    amino_root_logger.error(huestr(str(msg)).red.bold.colorized)
+    if Config['general'].debug:
+        amino_root_logger.caught_exception('running spec', msg)
+    else:
+        amino_root_logger.error('error in spec run:')
+        amino_root_logger.error(huestr(str(msg)).red.bold.colorized)
 
 
 def kallikrein_run(specs: List[str]) -> Either[Exception, SpecsResult]:
