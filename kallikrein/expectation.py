@@ -7,6 +7,7 @@ from typing import Generic, TypeVar, Callable, Any
 from amino import Boolean, Task, L, _, List, __
 from amino.boolean import false, true
 from amino.tc.monoid import Monoid
+from amino.anon import format_funcall
 
 from kallikrein.matcher import BoundMatcher
 from kallikrein.match_result import MatchResult, SuccessMatchResult
@@ -188,6 +189,15 @@ class AlgExpectation(Expectation):
 
 class SingleExpectation(AlgExpectation):
 
+    def __and__(self, other: AlgExpectation) -> AlgExpectation:
+        return MultiExpectation(self, other, operator.and_)
+
+    def __or__(self, other: AlgExpectation) -> AlgExpectation:
+        return MultiExpectation(self, other, operator.or_)
+
+
+class SingleStrictExpectation(SingleExpectation):
+
     def __init__(self, match: BoundMatcher, value: A) -> None:
         self.match = match
         self.value = value
@@ -200,12 +210,6 @@ class SingleExpectation(AlgExpectation):
     def __str__(self) -> str:
         return '{}({}, {})'.format(self.__class__.__name__, self.match,
                                    self.value)
-
-    def __and__(self, other: AlgExpectation) -> AlgExpectation:
-        return MultiExpectation(self, other, operator.and_)
-
-    def __or__(self, other: AlgExpectation) -> AlgExpectation:
-        return MultiExpectation(self, other, operator.or_)
 
 
 class MultiExpectation(AlgExpectation):
@@ -303,6 +307,28 @@ def pending(f: Callable[[Any], Expectation]) -> Callable[[Any], Expectation]:
         return PendingExpectation(f)
     return wrapper
 
+
+class SingleCallableExpectation(SingleExpectation):
+
+    def __init__(self, match: BoundMatcher, value: Callable[..., A], a: Any,
+                 kw: Any) -> None:
+        self.match = match
+        self.value = value
+        self.a = a
+        self.kw = kw
+
+    @property
+    def evaluate(self) -> Task[ExpectationResult]:
+        return (
+            Task.delay(self.value, *self.a, **self.kw) /
+            self.match.evaluate /
+            L(SingleExpectationResult)(self, _)
+        )
+
+    def __str__(self) -> str:
+        return '{}({}, {})'.format(self.__class__.__name__, self.match,
+                                   format_funcall(self.value, self.a, self.kw))
+
 __all__ = ('Expectation', 'SingleExpectation', 'UnsafeExpectation',
            'unsafe_expectation_result', 'FatalSpec', 'FailedUnsafeSpec',
-           'pending')
+           'pending', 'SingleStrictExpectation')

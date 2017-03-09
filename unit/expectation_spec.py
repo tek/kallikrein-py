@@ -3,7 +3,7 @@ from amino import List, L, _
 
 from kallikrein.matchers import greater_equal, forall
 from kallikrein import k
-from kallikrein.expectable import ExpectationFailed, unsafe_k
+from kallikrein.expectable import ExpectationFailed, unsafe_k, kf
 from kallikrein.matcher import Matcher
 from kallikrein.expectation import (UnsafeExpectation, AlgExpectation,
                                     MultiExpectationResult)
@@ -60,5 +60,23 @@ class ExpectationSpec(Spec):
         assert result.is_right
         assert result.value.failure
         assert isinstance(result.value, MultiExpectationResult)
+
+    def callable(self) -> None:
+        exp = kf(lambda a, b: List(a + b), 5, 1).match(self._matcher)
+        result = exp.evaluate.attempt
+        assert result.present
+        assert result.value.success
+
+    def true(self) -> None:
+        exp = kf(lambda: True).true
+        result = exp.evaluate.attempt
+        assert result.present
+        assert result.value.success
+
+    def false(self) -> None:
+        exp = kf(lambda: True).false
+        result = exp.evaluate.attempt
+        assert result.present
+        assert result.value.failure
 
 __all__ = ('ExpectationSpec',)
