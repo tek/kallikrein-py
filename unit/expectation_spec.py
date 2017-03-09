@@ -1,4 +1,4 @@
-from amino.test import Spec
+from amino.test.spec_spec import Spec
 from amino import List, L, _
 
 from kallikrein.matchers import greater_equal, forall

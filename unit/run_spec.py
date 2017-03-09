@@ -1,6 +1,6 @@
 import inspect
 
-from amino.test import Spec
+from amino.test.spec_spec import Spec
 from amino import List, Right, Left, Path, Just, Empty, __, _, Maybe
 from amino.list import Lists
 from amino.task import TaskException

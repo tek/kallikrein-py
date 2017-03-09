@@ -1,4 +1,4 @@
-from amino.test import Spec
+from amino.test.spec_spec import Spec
 
 from kallikrein import k
 from kallikrein.match_result import MatchResult

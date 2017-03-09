@@ -1,7 +1,7 @@
 from collections.abc import Container
 from typing import Any
 
-from amino.test import Spec
+from amino.test.spec_spec import Spec
 from amino import List, L
 from amino.anon import lambda_str
 

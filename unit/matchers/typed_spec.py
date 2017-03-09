@@ -2,7 +2,7 @@ from kallikrein import k
 from kallikrein.matchers.typed import have_type
 
 from amino import List, Just
-from amino.test import Spec
+from amino.test.spec_spec import Spec
 
 
 class TypedSpec(Spec):
