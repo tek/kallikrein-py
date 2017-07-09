@@ -47,8 +47,7 @@ class SimpleComparison(Comparison):
         return self.op_s, self.op_f
 
 
-def comparison(op: Callable[[Number, Number], bool], op_s: str, op_f: str
-               ) -> Matcher[Number]:
+def comparison(op: Callable[[Number, Number], bool], op_s: str, op_f: str) -> Matcher[Number]:
     return SimpleComparison(op, op_s, op_f)
 
 equal = comparison(operator.eq, '==', '/=')

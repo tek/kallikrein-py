@@ -13,8 +13,7 @@ B = TypeVar('B')
 
 class ChainTypedEither(ChainTyped, tpe=Either):
 
-    def chain(self, matcher: StrictMatcher, other: Union[A, BoundMatcher]
-              ) -> BoundMatcher:
+    def chain(self, matcher: StrictMatcher, other: Union[A, BoundMatcher]) -> BoundMatcher:
         return matcher & contain(other)
 
 

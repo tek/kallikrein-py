@@ -36,12 +36,10 @@ class PredContainCollection(PredContain, pred=is_container):
 
 class NestContainCollection(NestContain, pred=is_collection):
 
-    def match(self, exp: Collection[A], target: BoundMatcher
-              ) -> List[MatchResult[B]]:
+    def match(self, exp: Collection[A], target: BoundMatcher) -> List[MatchResult[B]]:
         return List.wrap([target.evaluate(e) for e in exp])
 
-    def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]
-             ) -> MatchResult[A]:
+    def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]) -> MatchResult[A]:
         return ExistsMatchResult(name, exp, nested)
 
 

@@ -111,8 +111,7 @@ class NestedMatchResultBase(MatchResult):
 # use this instead of passing `SuccessMatchResult`
 class NestedMatchResult(NestedMatchResultBase):
 
-    def __init__(self, exp: A, main_success: bool, main_msg: str,
-                 nested: List[MatchResult]) -> None:
+    def __init__(self, exp: A, main_success: bool, main_msg: str, nested: List[MatchResult]) -> None:
         super().__init__(exp, nested)
         self.main_success = Boolean(main_success)
         self.main_msg = main_msg
@@ -148,7 +147,9 @@ class MultiMatchResult(NestedMatchResultBase):
     def main_message(self) -> List[str]:
         return self.success_message if self.success else self.failure_message
 
-    main_message_concat = main_message
+    @property
+    def main_message_concat(self) -> List[str]:
+        return self.main_message
 
     @property
     def success_message(self) -> str:

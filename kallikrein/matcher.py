@@ -84,8 +84,7 @@ class ChainMatcher(TypeClass):
 
 class Matcher(Generic[A]):
 
-    def __call__(self, target: Union[A, SimpleBoundMatcher]
-                 ) -> SimpleBoundMatcher:
+    def __call__(self, target: Union[A, SimpleBoundMatcher]) -> SimpleBoundMatcher:
         if isinstance(target, SimpleBoundMatcher):
             return NestedMatcher(self, self.match_nested, target)
         else:
@@ -96,8 +95,7 @@ class Matcher(Generic[A]):
         ...
 
     @abc.abstractmethod
-    def match_nested(self, exp: A, target: SimpleBoundMatcher
-                     ) -> MatchResult[A]:
+    def match_nested(self, exp: A, target: SimpleBoundMatcher) -> MatchResult[A]:
         ...
 
     @property
@@ -112,7 +110,7 @@ class Predicate(TypeClass):
         ...
 
 
-class Nesting(TypeClass):
+class Nesting(Generic[A, C], TypeClass):
 
     @abc.abstractmethod
     def match(self, exp: A, target: SimpleBoundMatcher) -> C:
@@ -183,8 +181,7 @@ class TCMatcher(Matcher[A]):
         message = self.format(success, exp, target)
         return SimpleMatchResult(success, message)
 
-    def match_nested(self, exp: A, target: SimpleBoundMatcher
-                     ) -> MatchResult[A]:
+    def match_nested(self, exp: A, target: SimpleBoundMatcher) -> MatchResult[A]:
         nest = self.nest(exp)
         nested = nest.match(exp, target)
         return nest.wrap(self.matcher_type.__name__, exp, nested)

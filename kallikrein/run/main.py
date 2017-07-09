@@ -97,8 +97,7 @@ class SpecRunner:
         return Task.delay(self.spec_cls) // run
 
     def __str__(self) -> str:
-        return '{}({}, {})'.format(self.__class__.__name__, self.spec_cls,
-                                   self.lines)
+        return '{}({}, {})'.format(self.__class__.__name__, self.spec_cls, self.lines)
 
 
 def parse_locator(loc: str) -> Either[str, List[SpecLocation]]:
@@ -171,13 +170,11 @@ def specs_run_task(specs: List[str]) -> Task[SpecsResult]:
     return runners(specs).task() // run_specs
 
 
-def specs_run_task_lazy(specs: List[str]
-                        ) -> Either[str, List[List[Task[Line]]]]:
+def specs_run_task_lazy(specs: List[str]) -> Either[str, List[List[Task[Line]]]]:
     return runners(specs) / run_specs_lazy
 
 
-def convert_lazy_result(result: List[List[Line]], log: bool=False
-                        ) -> SpecsResult:
+def convert_lazy_result(result: List[List[Line]], log: bool=False) -> SpecsResult:
     def convert_spec(spec: Task[ExpectationResult]) -> Line:
         line = spec.attempt.right_or_map(FatalLine)
         if log:

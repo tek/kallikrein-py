@@ -52,8 +52,7 @@ class PlainLine(SimpleLine):
 
 class ResultLine(SimpleLine):
 
-    def __init__(self, text: str, spec: Any, result: ExpectationResult,
-                 duration: timedelta) -> None:
+    def __init__(self, text: str, spec: Any, result: ExpectationResult, duration: timedelta) -> None:
         super().__init__(text)
         self.spec = spec
         self.result = result
@@ -84,8 +83,7 @@ class ResultLine(SimpleLine):
 
 class SpecLine(Line):
 
-    def __init__(self, name: str, text: str,
-                 spec: Callable[[Any], Expectation]) -> None:
+    def __init__(self, name: str, text: str, spec: Callable[[Any], Expectation]) -> None:
         super().__init__(text)
         self.name = name
         self.spec = spec
