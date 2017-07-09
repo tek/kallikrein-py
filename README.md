@@ -139,8 +139,7 @@ class NestContainCollection(NestContain, pred=is_collection):
     def match(self, exp: Collection[A], target: Match) -> List[MatchResult[B]]:
         return List.wrap([target.evaluate(e) for e in exp])
 
-    def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]
-             ) -> MatchResult[A]:
+    def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]) -> MatchResult[A]:
         return ExistsMatchResult(name, exp, nested)
 
 
@@ -154,31 +153,24 @@ class PredContainMaybe(PredContain, tpe=Maybe):
     def check(self, exp: Maybe[A], target: A) -> Boolean:
         return Boolean(exp.contains(target))
 ```
-The `PredContain` and `NestContain` classes are used to link instances for
-specific types to the contain matcher.
-The matcher checks all available instances for eligibility for the type of the
-checked expectable and calls the `check`, `match` and `wrap` methods on the
-respective instances.
+The `PredContain` and `NestContain` classes are used to link instances for specific types to the contain matcher.
+The matcher checks all available instances for eligibility for the type of the checked expectable and calls the `check`,
+`match` and `wrap` methods on the respective instances.
 
-In this example, the instances use a predicate function to check whether a type
-can be handled by them, in this case, if they are virtual subclasses of
-`Container` or `Iterable`.
-The simple way would be to pass `tpe=list` to the metaclass constructor instead
-of `pred=is_container`, but that would not allow any other iterable type to be
-matched.
-The instance `PredContainMaybe` demonstrates the use of the `tpe` variant and
-shows that additional instances for arbitrary types can be added without having
-to change the internal logic of **kallikrein**.
+In this example, the instances use a predicate function to check whether a type can be handled by them, in this case, if
+they are virtual subclasses of `Container` or `Iterable`.
+The simple way would be to pass `tpe=list` to the metaclass constructor instead of `pred=is_container`, but that would
+not allow any other iterable type to be matched.
+The instance `PredContainMaybe` demonstrates the use of the `tpe` variant and shows that additional instances for
+arbitrary types can be added without having to change the internal logic of **kallikrein**.
 
-The internal part of `TCMatcher` constructs a `SimpleMatchResult` from the
-result of `Predicate.check`, indicating success of the match, and the two
-strings supplied to the constructor that describe the success and failure.
+The internal part of `TCMatcher` constructs a `SimpleMatchResult` from the result of `Predicate.check`, indicating
+success of the match, and the two strings supplied to the constructor that describe the success and failure.
 
-Because nested matches must be handled specifically to the matcher,
-the `MatchResult` must be constructed in the implementation.
-`ExistsMatchResult` is one possible variant; it receives the list of nested
-match results (one for each list element) and creates a detailed error
-message, succeeding if at least one nested `MatchResult` is successful.
+Because nested matches must be handled specifically to the matcher, the `MatchResult` must be constructed in the
+implementation.
+`ExistsMatchResult` is one possible variant; it receives the list of nested match results (one for each list element)
+and creates a detailed error message, succeeding if at least one nested `MatchResult` is successful.
 
 [specs2]: https://github.com/etorreborre/specs2
 [amino]: https://github.com/tek/amino
