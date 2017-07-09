@@ -117,7 +117,7 @@ def spec_line(spec: SpecLocation, attr: str, line: str) -> Maybe[SpecLine]:
     )
 
 
-spec_regex = r'\s*(?P<text>[^#][^\$]+)\$(?P<spec>\w+)'
+spec_regex = r'\s*(?P<text>[^#\s][^\$]+)\$(?P<spec>\w+)'
 
 
 @curried
