@@ -211,7 +211,7 @@ class SpecsResult(Logging):
         return (
             '{}ms'.format(ms)
             if d < timedelta(seconds=1) else
-            '{}.{}s'.format(s, ms)
+            '{}.{:0>3}s'.format(s, ms)
             if d < timedelta(seconds=10) else
             '{}s'.format(s)
             if d < timedelta(minutes=1) else
