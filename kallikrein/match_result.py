@@ -5,6 +5,7 @@ from hues import huestr
 
 from amino import Boolean, List, _
 from amino.boolean import false
+from amino.lazy import lazy
 
 from kallikrein.util.string import indent
 
@@ -40,7 +41,7 @@ class MatchResult(Generic[A]):
 
 class SimpleMatchResult(Generic[A], MatchResult[A]):
 
-    def __init__(self, result: bool, msg: str) -> None:
+    def __init__(self, result: bool, msg: List[str]) -> None:
         self.result = Boolean(result)
         self.msg = msg
 
@@ -50,7 +51,7 @@ class SimpleMatchResult(Generic[A], MatchResult[A]):
 
     @property
     def message(self) -> List[str]:
-        return List(self.msg)
+        return self.msg
 
 
 class MultiLineMatchResult(Generic[A], MatchResult[A]):
@@ -82,13 +83,15 @@ class NestedMatchResultBase(MatchResult):
     def main_message_concat(self) -> str:
         ...
 
-    @property
+    @lazy
     def message(self) -> List[str]:
         n = self.nested_messages
         m = self.main_message_concat
-        return (List('{} {}'.format(m, n.mk_string()))
-                if n.length == 1 else
-                indent(n).cons(m))
+        return (
+            List('{} {}'.format(m, n.mk_string()))
+            if n.length == 1 else
+            indent(n).cons(m)
+        )
 
     @property
     def failures(self) -> List[MatchResult]:
@@ -101,7 +104,7 @@ class NestedMatchResultBase(MatchResult):
     @property
     def nested_messages(self) -> List[str]:
         n = self.nested if self.nested_success else self.failures
-        msgs = n / _.report
+        msgs = n // _.report_lines
         return (msgs
                 if self.nested_success else
                 msgs / huestr / _.yellow.colorized)
@@ -122,9 +125,7 @@ class NestedMatchResult(NestedMatchResultBase):
 
     @property
     def main_message_concat(self) -> str:
-        conj = ('but'
-                if self.main_success and not self.nested_success else
-                'and')
+        conj = 'but' if self.main_success and not self.nested_success else 'and'
         return '{} {}'.format(self.main_msg, conj)
 
     @property
@@ -144,11 +145,11 @@ class MultiMatchResult(NestedMatchResultBase):
         self.desc = desc
 
     @property
-    def main_message(self) -> List[str]:
+    def main_message(self) -> str:
         return self.success_message if self.success else self.failure_message
 
     @property
-    def main_message_concat(self) -> List[str]:
+    def main_message_concat(self) -> str:
         return self.main_message
 
     @property
@@ -168,7 +169,19 @@ class ExistsMatchResult(MultiMatchResult):
 
     @property
     def failure_message(self) -> List[str]:
-        return 'no elements match'
+        return 'no element matches:'
+
+
+class ContainsMatchResult(MultiMatchResult):
+
+    @property
+    def success(self) -> Boolean:
+        return self.nested.exists(_.success)
+
+    @property
+    def failure_message(self) -> List[str]:
+        name = self.exp.__class__.__name__
+        return f'`{name}` does not match:'
 
 
 class ForAllMatchResult(MultiMatchResult):
@@ -250,7 +263,6 @@ class MatchResultOr(MatchResultAlg):
         return self.sub.exists(_.success)
 
 
-__all__ = ('MatchResult', 'SimpleMatchResult', 'MultiLineMatchResult',
-           'NestedMatchResult', 'MultiMatchResult', 'ExistsMatchResult',
-           'ForAllMatchResult', 'BadNestedMatch', 'SuccessMatchResult',
-           'FailureMatchResult')
+__all__ = ('MatchResult', 'SimpleMatchResult', 'MultiLineMatchResult', 'NestedMatchResult', 'MultiMatchResult',
+           'ExistsMatchResult', 'ForAllMatchResult', 'BadNestedMatch', 'SuccessMatchResult', 'FailureMatchResult',
+           'ContainsMatchResult')

@@ -21,8 +21,7 @@ class ChainTyped(TypeClass):
 
 class ChainMatcherTyped(ChainMatcher, tpe=Typed):
 
-    def chain(self, matcher: StrictMatcher, other: Union[A, BoundMatcher]
-              ) -> BoundMatcher:
+    def chain(self, matcher: StrictMatcher, other: Union[A, BoundMatcher]) -> BoundMatcher:
         return ChainTyped.fatal(matcher.target).chain(matcher, other)
 
 

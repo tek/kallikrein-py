@@ -1,18 +1,23 @@
-from amino import __
+from typing import Any
 
 from hues import huestr
 
-
-def green(msg: str) -> str:
-    return huestr(msg).green.colorized
+from amino import __
 
 
-def red(msg: str) -> str:
-    return huestr(msg).red.colorized
+def green(msg: Any) -> str:
+    return huestr(str(msg)).green.colorized
 
 
-def yellow(msg: str) -> str:
-    return huestr(msg).yellow.colorized
+def red(msg: Any) -> str:
+    return huestr(str(msg)).red.colorized
+
+
+def yellow(msg: Any) -> str:
+    return huestr(str(msg)).yellow.colorized
+
+def blue(msg: Any) -> str:
+    return huestr(str(msg)).blue.colorized
 
 indent = __.map(' {}'.format)
 
@@ -22,5 +27,8 @@ red_cross = red('✗')
 
 yellow_clock = yellow('⌚')
 
-__all__ = ('indent', 'green_check', 'red_cross', 'green', 'red',
-           'yellow_clock')
+green_plus = green('+')
+
+red_minus = red('-')
+
+__all__ = ('indent', 'green_check', 'red_cross', 'green', 'red', 'yellow_clock', 'green_plus', 'red_minus', 'blue')

@@ -1,5 +1,5 @@
 import abc
-from typing import Generic, TypeVar, Union, Callable, Type
+from typing import Generic, TypeVar, Union, Callable, Type, cast
 
 from kallikrein.match_result import (MatchResult, SimpleMatchResult,
                                      BadNestedMatch, MatchResultAnd,
@@ -39,15 +39,13 @@ class BoundMatcher(Generic[A], MatcherAlg):
 
 class SimpleBoundMatcher(BoundMatcher[A], Generic[A, B]):
 
-    def __init__(self, matcher: 'Matcher',
-                 handler: Callable[[A, B], MatchResult], target: B) -> None:
+    def __init__(self, matcher: 'Matcher', handler: Callable[[A, B], MatchResult], target: B) -> None:
         self.matcher = matcher
         self.handler = handler
         self.target = target
 
     def __str__(self) -> str:
-        return '{}({}, {})'.format(self.__class__.__name__, self.handler,
-                                   self.target)
+        return '{}({}, {})'.format(self.__class__.__name__, self.handler, self.target)
 
     def evaluate(self, exp: A) -> MatchResult[A]:
         return self.handler(exp, self.target)
@@ -59,14 +57,13 @@ class StrictMatcher(SimpleBoundMatcher[A, A], Generic[A]):
         return ChainMatcher.fatal(self.matcher.matcher_type).chain(self, other)
 
 
-class NestedMatcher(SimpleBoundMatcher[A, SimpleBoundMatcher], Generic[A]):
+class NestedMatcher(SimpleBoundMatcher[A, BoundMatcher], Generic[A]):
     pass
 
 
 class BoundMatcherAlg(BoundMatcher[A], Generic[A, B]):
 
-    def __init__(self, sub: List[SimpleBoundMatcher[A, B]],
-                 result_ctor: Type[MatchResultAlg]) -> None:
+    def __init__(self, sub: List[SimpleBoundMatcher[A, B]], result_ctor: Type[MatchResultAlg]) -> None:
         self.sub = sub
         self.result_ctor = result_ctor
 
@@ -77,25 +74,25 @@ class BoundMatcherAlg(BoundMatcher[A], Generic[A, B]):
 class ChainMatcher(TypeClass):
 
     @abc.abstractmethod
-    def chain(self, matcher: StrictMatcher, other: Union[A, BoundMatcher]
-              ) -> BoundMatcher:
+    def chain(self, matcher: StrictMatcher, other: Union[A, BoundMatcher]) -> BoundMatcher:
         ...
 
 
 class Matcher(Generic[A]):
 
-    def __call__(self, target: Union[A, SimpleBoundMatcher]) -> SimpleBoundMatcher:
-        if isinstance(target, SimpleBoundMatcher):
-            return NestedMatcher(self, self.match_nested, target)
-        else:
-            return StrictMatcher(self, self.match, target)
+    def __call__(self, target: Union[A, BoundMatcher]) -> SimpleBoundMatcher:
+        return (
+            cast(SimpleBoundMatcher, NestedMatcher(self, self.match_nested, target))
+            if isinstance(target, BoundMatcher) else
+            StrictMatcher(self, self.match, target)
+        )
 
     @abc.abstractmethod
     def match(self, exp: A, target: A) -> MatchResult[A]:
         ...
 
     @abc.abstractmethod
-    def match_nested(self, exp: A, target: SimpleBoundMatcher) -> MatchResult[A]:
+    def match_nested(self, exp: A, target: BoundMatcher) -> MatchResult[A]:
         ...
 
     @property
@@ -103,7 +100,7 @@ class Matcher(Generic[A]):
         return type(self)
 
 
-class Predicate(TypeClass):
+class Predicate(Generic[A, B], TypeClass):
 
     @abc.abstractmethod
     def check(exp: A, target: B) -> Boolean:
@@ -113,7 +110,7 @@ class Predicate(TypeClass):
 class Nesting(Generic[A, C], TypeClass):
 
     @abc.abstractmethod
-    def match(self, exp: A, target: SimpleBoundMatcher) -> C:
+    def match(self, exp: A, target: BoundMatcher) -> C:
         ...
 
     @abc.abstractmethod
@@ -123,7 +120,7 @@ class Nesting(Generic[A, C], TypeClass):
 
 class NestingUnavailable(Nesting):
 
-    def match(self, exp: A, target: SimpleBoundMatcher) -> C:
+    def match(self, exp: A, target: BoundMatcher) -> C:
         return BadNestedMatch(self.tpe)
 
     def wrap(self, name: str, exp: A, nested: C) -> MatchResult:
@@ -152,7 +149,7 @@ class TCMatcher(Matcher[A]):
         ...
 
     @abc.abstractmethod
-    def format(self, success: bool, exp: A, target: B) -> str:
+    def format(self, success: bool, exp: A, target: B) -> List[str]:
         ...
 
     def pred(self, exp: A, target: B) -> Maybe[Predicate]:
@@ -181,25 +178,18 @@ class TCMatcher(Matcher[A]):
         message = self.format(success, exp, target)
         return SimpleMatchResult(success, message)
 
-    def match_nested(self, exp: A, target: SimpleBoundMatcher) -> MatchResult[A]:
+    def match_nested(self, exp: A, target: BoundMatcher) -> MatchResult[A]:
         nest = self.nest(exp)
         nested = nest.match(exp, target)
         return nest.wrap(self.matcher_type.__name__, exp, nested)
 
 
-class SimpleTCMatcher(TCMatcher):
+class SimpleTCMatcherBase(TCMatcher):
 
-    def __init__(self, tpe: Type, success_tmpl: str, failure_tmpl: str,
-                 pred_tc: Type[Predicate], nest_tc: Type[Nesting]) -> None:
+    def __init__(self, tpe: Type, pred_tc: Type[Predicate], nest_tc: Type[Nesting]) -> None:
         self.tpe = tpe
-        self.success_tmpl = success_tmpl
-        self.failure_tmpl = failure_tmpl
         self._pred_tc = pred_tc
         self._nest_tc = nest_tc
-
-    def format(self, success: bool, exp: A, target: B) -> str:
-        tmpl = self.success_tmpl if success else self.failure_tmpl
-        return tmpl.format(exp, target)
 
     @property
     def pred_tc(self) -> Type[Predicate]:
@@ -213,7 +203,20 @@ class SimpleTCMatcher(TCMatcher):
     def matcher_type(self) -> Type:
         return self.tpe
 
+
+class SimpleTCMatcher(SimpleTCMatcherBase):
+
+    def __init__(self, tpe: Type, success_tmpl: str, failure_tmpl: str, pred_tc: Type[Predicate], nest_tc: Type[Nesting]
+                 ) -> None:
+        super().__init__(tpe, pred_tc, nest_tc)
+        self.success_tmpl = success_tmpl
+        self.failure_tmpl = failure_tmpl
+
+    def format(self, success: bool, exp: A, target: B) -> List[str]:
+        tmpl = self.success_tmpl if success else self.failure_tmpl
+        return List(tmpl.format(exp, target))
+
 matcher = SimpleTCMatcher
 
-__all__ = ('Matcher', 'BoundMatcher', 'Predicate', 'Nesting', 'NoInstance',
-           'TCMatcher', 'SimpleTCMatcher', 'BoundMatcher')
+__all__ = ('Matcher', 'BoundMatcher', 'Predicate', 'Nesting', 'NoInstance', 'TCMatcher', 'SimpleTCMatcher',
+           'BoundMatcher', 'SimpleTCMatcherBase')

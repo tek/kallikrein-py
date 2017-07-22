@@ -1,8 +1,7 @@
 from typing import Callable, Any
 
 from kallikrein.matcher import Matcher
-from kallikrein.match_result import (MatchResult, SimpleMatchResult,
-                                     MultiLineMatchResult)
+from kallikrein.match_result import MatchResult, SimpleMatchResult, MultiLineMatchResult
 from kallikrein.util.string import indent
 
 from amino import Either, _, Try, L, List
@@ -31,10 +30,9 @@ class Throw(Matcher[Callable]):
             if result else
             Throw.simple_failure.format(exp_repr, exc_repr, target.__name__)
         )
-        return SimpleMatchResult(result, message)
+        return SimpleMatchResult(result, List(message))
 
-    def match_nested(self, exp: Callable, target: Matcher
-                     ) -> MatchResult[Callable]:
+    def match_nested(self, exp: Callable, target: Matcher) -> MatchResult[Callable]:
         exp_repr = lambda_str(exp)
         exc = self.exception(exp)
         nested = exc / target.evaluate

@@ -204,12 +204,13 @@ class SingleStrictExpectation(SingleExpectation):
 
     @property
     def evaluate(self) -> Task[ExpectationResult]:
-        return (Task.delay(self.match.evaluate, self.value) /
-                L(SingleExpectationResult)(self, _))
+        return (
+            Task.delay(self.match.evaluate, self.value) /
+            L(SingleExpectationResult)(self, _)
+        )
 
     def __str__(self) -> str:
-        return '{}({}, {})'.format(self.__class__.__name__, self.match,
-                                   self.value)
+        return '{}({}, {})'.format(self.__class__.__name__, self.match, self.value)
 
 
 class MultiExpectation(AlgExpectation):

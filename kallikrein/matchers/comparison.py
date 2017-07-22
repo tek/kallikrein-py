@@ -3,10 +3,9 @@ import operator
 from typing import Tuple, Callable
 from numbers import Number
 
-from kallikrein.match_result import (MatchResult, SimpleMatchResult,
-                                     BadNestedMatch)
+from kallikrein.match_result import MatchResult, SimpleMatchResult, BadNestedMatch
 from kallikrein.matcher import Matcher, BoundMatcher
-from amino import Boolean, L, _
+from amino import Boolean, L, _, List
 
 
 class Comparison(Matcher[Number]):
@@ -24,7 +23,7 @@ class Comparison(Matcher[Number]):
         op_s, op_f = self.operator_reprs
         op = op_s if result else op_f
         message = '{} {} {}'.format(exp, op, target)
-        return SimpleMatchResult(result, message)
+        return SimpleMatchResult(result, List(message))
 
     def match_nested(self, exp: Number, target: BoundMatcher) -> MatchResult[Number]:
         return BadNestedMatch(self)
@@ -32,8 +31,7 @@ class Comparison(Matcher[Number]):
 
 class SimpleComparison(Comparison):
 
-    def __init__(self, op: Callable[[Number, Number], bool], op_s: str,
-                 op_f: str) -> None:
+    def __init__(self, op: Callable[[Number, Number], bool], op_s: str, op_f: str) -> None:
         self.op = op
         self.op_s = op_s
         self.op_f = op_f
@@ -68,5 +66,4 @@ le = less_equal
 less = comparison(operator.lt, '<', '>=')
 lt = less
 
-__all__ = ('equal', 'greater_equal', 'eq', 'ge', 'greater', 'gt', 'less_equal',
-           'le', 'less', 'lt')
+__all__ = ('equal', 'greater_equal', 'eq', 'ge', 'greater', 'gt', 'less_equal', 'le', 'less', 'lt')

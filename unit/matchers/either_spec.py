@@ -10,8 +10,7 @@ from kallikrein.matchers import contain
 
 class EitherSpec(Spec):
 
-    def _run(self, exp: Expectation, success: bool, count: int = 1
-             ) -> MatchResult:
+    def _run(self, exp: Expectation, success: bool, count: int = 1) -> MatchResult:
         expectation = exp.evaluate.attempt
         assert expectation.is_right
         result = expectation.value

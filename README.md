@@ -1,6 +1,6 @@
 ## Intro
-_kallikrein_ is a test framework inspired by [specs2], focused on functional
-purity and composability.
+
+_kallikrein_ is a test framework inspired by [specs2], focused on functional purity and composability.
 
 ## Install
 ```
@@ -8,8 +8,9 @@ pip install kallikrein
 ```
 
 ## Write
-Spec classes need only define a docstring containing interpolation expressions
-that specify which of the class' methods are specs:
+
+Spec classes need only define a docstring containing interpolation expressions that specify which of the class' methods
+are specs:
 
 ```python
 from kallikrein import k
@@ -24,7 +25,8 @@ class ASpec:
 
     these tests are nested
     successful nesting $nested
-    failed spec $failure '''
+    failed spec $failure
+    '''
 
     def setup(self):
         self.a = 3
@@ -39,12 +41,10 @@ class ASpec:
         return k(List('abc', 'abc', 'ac')).must(forall(contain('b')))
 ```
 
-There is no magic involved, the names in the docstring are simply used with
-`getattr`.
+There is no magic involved, the names in the docstring are simply used with `getattr`.
 
-The expectations aren't evaluated in-place, but after having been returned to
-the spec runner. There is an alternative, impure version called `unsafe_k` that
-raises an exception.
+The expectations aren't evaluated in-place, but after having been returned to the spec runner. There is an alternative,
+impure version called `unsafe_k` that raises an exception.
 
 Logical operations on expectations are possible:
 ```python
@@ -57,8 +57,7 @@ THe same applies for matchers:
 k(3).must(equal(3) & greater_equal(2))
 ```
 
-If a spec class has `setup` and `teardown` methods, they are called once before
-and after each individual spec.
+If a spec class has `setup` and `teardown` methods, they are called once before and after each individual spec.
 
 The decorator `kallikrein.pending` can be used to mark a spec as pending:
 ```python
@@ -66,6 +65,8 @@ The decorator `kallikrein.pending` can be used to mark a spec as pending:
 def not_implemented_yet(self):
   pass
 ```
+
+To deactivate a spec completely, simply put a comment character `#` in front of the line in the docstring.
 
 ## Run
 ```
@@ -83,32 +84,58 @@ Optionally, a line number or method name can be appended to run a single case:
 % klk mod.path.to.ASpec.simple
 ```
 
-Modules, packages, directories and files are valid as well, in which case a
-recursive search is done returning all valid specs specified in the modules'
-`__all__` attribute:
+Modules, packages, directories and files are valid as well, in which case a recursive search is done returning all valid
+specs specified in the modules' `__all__` attribute:
 
 ```
 % klk mod.path
 % klk mod/path/to
 ```
 
+### Builtins
+
+#### typed
+
+This matcher simply checks that the expectable is an instance of the class supplied as an argument:
+
+```python
+k('kallikrein').must(have_type(str))
+```
+
+`have_type` can also take a matcher as a second argument, which uses the feature of **chained matchers** that works by
+implementing the typeclass `ChainMatcher`:
+
+```python
+k(List(1, 2, 3)).must(have_type(List)(contain(greater(2))))
+```
+
+There are convenience extensions for `Maybe` and `Either`:
+
+```python
+k(Right(5)).must(be_right(5))
+```
+
+#### lines
+
+This matcher compares two strings or lists of strings (mixed works as well) and prints a diff of the lines instead of
+the whole lists:
+
+![lines](img/lines.jpg)
+
 ## Extend
-`must` expects a `Match` instance for its argument which is produced by a
-`Matcher` when called with a target value and produces a `MatchResult` when
-evaluated.
-Subclassing `Matcher` and implementing the `match` and `match_nested` methods
-is a simple way to create a custom matcher, but there is a much more flexible
-concept available.
 
-The `TCMatcher` class uses [amino]'s typeclass system to allow special
-treatment of any type by any matcher without having to reimplement the
-matchers.
-A typeclass matcher consists of two string templates for assembling the success
-and failure messages and two instances of the typeclasses `Predicate` and
-`Nesting`.
+`must` expects a `Match` instance for its argument which is produced by a `Matcher` when called with a target value and
+produces a `MatchResult` when evaluated.
+Subclassing `Matcher` and implementing the `match` and `match_nested` methods is a simple way to create a custom
+matcher, but there is a much more flexible concept available.
 
-Defining classes for those typeclasses for a specific type automatically
-registers them as handlers for that type in the desired matcher.
+The `TCMatcher` class uses [amino]'s typeclass system to allow special treatment of any type by any matcher without
+having to reimplement the matchers.
+A typeclass matcher consists of two string templates for assembling the success and failure messages and two instances
+of the typeclasses `Predicate` and `Nesting`.
+
+Defining classes for those typeclasses for a specific type automatically registers them as handlers for that type in the
+desired matcher.
 
 This is the implementation of `contain` for reference:
 

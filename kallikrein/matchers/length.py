@@ -37,7 +37,7 @@ class NestLengthSized(NestLength, pred=is_sized):
 
 
 success = '`{}` has length of `{}`'
-failure = '`{}` doesn not have length of `{}`'
+failure = '`{}` does not have length of `{}`'
 have_length = matcher(Length, success, failure, PredLength, NestLength)
 
 __all__ = ('have_length',)

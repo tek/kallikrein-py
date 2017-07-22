@@ -1,12 +1,10 @@
-from typing import TypeVar
-from typing import Collection  # type: ignore
+from typing import TypeVar, Collection
 from collections.abc import Container, Iterable
 
 from amino import Boolean, List, L, _
 
 from kallikrein.matcher import Predicate, Nesting, matcher, BoundMatcher
-from kallikrein.match_result import (MatchResult,
-                                     ExistsMatchResult)
+from kallikrein.match_result import MatchResult, ContainsMatchResult
 
 A = TypeVar('A')
 B = TypeVar('B')
@@ -40,7 +38,7 @@ class NestContainCollection(NestContain, pred=is_collection):
         return List.wrap([target.evaluate(e) for e in exp])
 
     def wrap(self, name: str, exp: Collection[A], nested: List[MatchResult[B]]) -> MatchResult[A]:
-        return ExistsMatchResult(name, exp, nested)
+        return ContainsMatchResult(name, exp, nested)
 
 
 success = '`{}` contains `{}`'

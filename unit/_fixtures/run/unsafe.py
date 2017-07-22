@@ -32,7 +32,7 @@ target_report_unsafe = '''{}
  {} {}
  {} {}
   unsafe spec failed:
-   no elements match
+   `List` does not match:
     {}
     {}
 '''.format(head, green_check, l1, red_cross, l2, yellow('1 < 2'),
